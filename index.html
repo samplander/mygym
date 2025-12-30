@@ -11,14 +11,32 @@
 <body>
     <!-- Home Screen -->
     <div id="homeScreen" class="screen">
-        <div class="container-fluid h-100 d-flex flex-column justify-content-center align-items-center">
-            <h1 class="display-4 mb-4">Gym Tracker</h1>
-            <button id="startWorkoutBtn" class="btn btn-primary btn-lg mb-3">
-                <i class="bi bi-play-circle"></i> Start Workout
-            </button>
-            <button class="btn btn-outline-light btn-lg" onclick="showHistoryScreen()">
-                <i class="bi bi-clock-history"></i> View History
-            </button>
+        <div class="container-fluid h-100 d-flex flex-column justify-content-center align-items-center px-4">
+            <!-- App Icon -->
+            <div class="app-icon mb-3">
+                <i class="bi bi-bullseye"></i>
+            </div>
+            
+            <!-- Title -->
+            <h1 class="home-title mb-2">Gym Tracker</h1>
+            <p class="home-tagline mb-4">Track your progress, achieve your goals</p>
+            
+            <!-- Quick Stats Preview -->
+            <div id="quickStats" class="quick-stats mb-4">
+                <!-- Stats will be rendered by JavaScript -->
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="home-actions w-100" style="max-width: 320px;">
+                <button id="startWorkoutBtn" class="glass-btn glass-btn-primary mb-3">
+                    <i class="bi bi-play-circle-fill"></i>
+                    <span>Start Workout</span>
+                </button>
+                <button class="glass-btn glass-btn-secondary" onclick="showHistoryScreen()">
+                    <i class="bi bi-clock-history"></i>
+                    <span>View History</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -47,11 +65,15 @@
         <!-- Bottom Navigation -->
         <div class="bottom-nav">
             <button class="nav-item" onclick="showHomeScreen()">
-                <i class="bi bi-house-door"></i>
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-house-door"></i>
+                </div>
                 <span>Home</span>
             </button>
             <button class="nav-item active">
-                <i class="bi bi-clock-history"></i>
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-clock-history"></i>
+                </div>
                 <span>History</span>
             </button>
         </div>
@@ -90,11 +112,15 @@
         <!-- Bottom Navigation -->
         <div class="bottom-nav">
             <button class="nav-item active" onclick="showHomeScreen()">
-                <i class="bi bi-house-door"></i>
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-house-door-fill"></i>
+                </div>
                 <span>Home</span>
             </button>
             <button class="nav-item" onclick="showHistoryScreen()">
-                <i class="bi bi-clock-history"></i>
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-clock-history"></i>
+                </div>
                 <span>History</span>
             </button>
         </div>

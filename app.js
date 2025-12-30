@@ -22,6 +22,9 @@ function initializeApp() {
         if (e.key === 'Enter') saveExercise();
     });
     
+    // Render quick stats
+    renderQuickStats();
+    
     // Show appropriate screen
     if (currentWorkout) {
         showWorkoutScreen();
@@ -30,8 +33,43 @@ function initializeApp() {
     }
 }
 
+// Quick Stats Rendering
+function renderQuickStats() {
+    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const statsContainer = document.getElementById('quickStats');
+    
+    if (history.length === 0) {
+        statsContainer.innerHTML = '';
+        return;
+    }
+    
+    // Calculate stats
+    const totalWorkouts = history.length;
+    const lastWorkout = history[0];
+    const daysSinceLastWorkout = Math.floor((Date.now() - new Date(lastWorkout.completedAt).getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate total sets from all workouts
+    const totalSets = history.reduce((sum, workout) => sum + (workout.totalSets || 0), 0);
+    
+    statsContainer.innerHTML = `
+        <div class="stat-card">
+            <span class="stat-value">${totalWorkouts}</span>
+            <span class="stat-label">Workouts</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">${totalSets}</span>
+            <span class="stat-label">Total Sets</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">${daysSinceLastWorkout}</span>
+            <span class="stat-label">${daysSinceLastWorkout === 1 ? 'Day Ago' : 'Days Ago'}</span>
+        </div>
+    `;
+}
+
 // Screen Management
 function showHomeScreen() {
+    renderQuickStats(); // Refresh stats when returning to home
     document.getElementById('homeScreen').classList.remove('d-none');
     document.getElementById('workoutScreen').classList.add('d-none');
     document.getElementById('historyScreen').classList.add('d-none');
