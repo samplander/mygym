@@ -210,29 +210,37 @@ body {
 /* Sticky Header */
 .sticky-header {
     position: sticky;
-    top: 0;
+    top: 12px;
+    margin: 12px 12px 0 12px;
     z-index: 100;
-    background: white;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     padding: 12px 16px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .btn-back {
-    background: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
-    color: var(--primary-color);
-    font-size: 24px;
+    color: white;
+    font-size: 20px;
     width: 40px;
     height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .btn-back:active {
-    background: var(--light-bg);
+    transform: scale(0.95);
+    box-shadow: 0 1px 4px rgba(102, 126, 234, 0.3);
 }
 
 /* Workout Content */

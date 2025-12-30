@@ -51,6 +51,10 @@ function renderQuickStats() {
     // Calculate total sets from all workouts
     const totalSets = history.reduce((sum, workout) => sum + (workout.totalSets || 0), 0);
     
+    // Handle days display with fallback
+    const daysValue = isNaN(daysSinceLastWorkout) ? 0 : daysSinceLastWorkout;
+    const daysLabel = daysValue === 0 ? 'Today' : (daysValue === 1 ? 'Day Ago' : 'Days Ago');
+    
     statsContainer.innerHTML = `
         <div class="stat-card">
             <span class="stat-value">${totalWorkouts}</span>
@@ -61,8 +65,8 @@ function renderQuickStats() {
             <span class="stat-label">Total Sets</span>
         </div>
         <div class="stat-card">
-            <span class="stat-value">${daysSinceLastWorkout}</span>
-            <span class="stat-label">${daysSinceLastWorkout === 1 ? 'Day Ago' : 'Days Ago'}</span>
+            <span class="stat-value">${daysValue === 0 ? '0' : daysValue}</span>
+            <span class="stat-label">${daysLabel}</span>
         </div>
     `;
 }
