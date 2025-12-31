@@ -2,6 +2,13 @@
 let currentWorkout = null;
 let timerInterval = null;
 
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+        .then(registration => console.log('Service Worker registered:', registration.scope))
+        .catch(error => console.log('Service Worker registration failed:', error));
+}
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
@@ -173,6 +180,7 @@ function saveExercise() {
         id: Date.now(),
         name: name,
         collapsed: false,
+        detailsHidden: false,
         selectedSetIndex: null,
         sets: []
     };
@@ -298,6 +306,15 @@ function toggleSet(exerciseId, setIndex) {
     renderExercises();
 }
 
+function toggleExerciseDetails(exerciseId) {
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+    
+    exercise.detailsHidden = !exercise.detailsHidden;
+    saveCurrentWorkout();
+    renderExercises();
+}
+
 function toggleAllExercises() {
     if (!currentWorkout || currentWorkout.exercises.length === 0) return;
     
@@ -342,14 +359,19 @@ function renderExercises() {
     
     container.innerHTML = currentWorkout.exercises.map(exercise => `
         <div class="exercise-card">
-            <div class="exercise-header" onclick="event.target.closest('.exercise-header').querySelector('.delete-exercise-btn').contains(event.target) ? null : toggleExercise(${exercise.id})">
+            <div class="exercise-header" onclick="event.target.closest('.exercise-header').querySelector('.delete-exercise-btn').contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-details-btn').contains(event.target) ? null : toggleExercise(${exercise.id})">
                 <div class="exercise-header-left">
                     <i class="bi bi-chevron-down chevron ${exercise.collapsed ? 'collapsed' : ''}"></i>
                     <h6>${exercise.name}</h6>
                 </div>
-                <button class="delete-exercise-btn" onclick="event.stopPropagation(); deleteExercise(${exercise.id})">
-                    <i class="bi bi-trash"></i>
-                </button>
+                <div class="exercise-header-right">
+                    <button class="toggle-details-btn" onclick="event.stopPropagation(); toggleExerciseDetails(${exercise.id})" title="${exercise.detailsHidden ? 'Show' : 'Hide'} details">
+                        <i class="bi bi-${exercise.detailsHidden ? 'eye-slash' : 'eye'}"></i>
+                    </button>
+                    <button class="delete-exercise-btn" onclick="event.stopPropagation(); deleteExercise(${exercise.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
             </div>
             <div class="exercise-body ${exercise.collapsed ? 'collapsed' : ''}">
                 ${renderSet(exercise.id, exercise)}
@@ -388,7 +410,7 @@ function renderSet(exerciseId, exercise) {
         </div>
         
         <!-- Current Set Details -->
-        <div class="current-set-details">
+        <div class="current-set-details ${exercise.detailsHidden ? 'hidden' : ''}">
             <div class="current-set-header">
                 <span class="current-set-title">Set ${selectedIndex + 1} Details</span>
                 <button class="delete-set-btn" onclick="deleteSet(${exerciseId}, ${selectedIndex})">
@@ -678,6 +700,7 @@ function useAsTemplate(workoutId) {
             id: Date.now() + Math.random(),
             name: exercise.name,
             collapsed: false,
+            detailsHidden: false,
             selectedSetIndex: 0,
             sets: exercise.sets.map(set => ({
                 collapsed: false,

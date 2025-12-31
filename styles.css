@@ -347,6 +347,12 @@ body {
     flex: 1;
 }
 
+.exercise-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .exercise-header h6 {
     margin: 0;
     font-size: 17px;
@@ -361,6 +367,27 @@ body {
 
 .chevron.collapsed {
     transform: rotate(-90deg);
+}
+
+.toggle-details-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: var(--touch-target);
+    height: var(--touch-target);
+    border-radius: 8px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: all;
+    z-index: 10;
+    transition: background 0.2s;
+}
+
+.toggle-details-btn:active {
+    background: rgba(255,255,255,0.3);
 }
 
 .delete-exercise-btn {
@@ -477,6 +504,17 @@ body {
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 8px;
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+
+.current-set-details.hidden {
+    max-height: 0;
+    padding: 0 12px;
+    margin-bottom: 0;
+    opacity: 0;
 }
 
 .current-set-header {
