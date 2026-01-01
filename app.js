@@ -181,6 +181,7 @@ function saveExercise() {
         name: name,
         collapsed: false,
         detailsHidden: false,
+        viewMode: 'planned',
         selectedSetIndex: null,
         sets: []
     };
@@ -381,6 +382,9 @@ function renderExercises() {
             </div>
         </div>
     `).join('');
+    
+    // Initialize swipe detection after rendering
+    setTimeout(() => initializeSwipeDetection(), 100);
 }
 
 function renderSet(exerciseId, exercise) {
@@ -390,6 +394,7 @@ function renderSet(exerciseId, exercise) {
     
     const selectedIndex = exercise.selectedSetIndex ?? 0;
     const selectedSet = exercise.sets[selectedIndex];
+    const viewMode = exercise.viewMode || 'planned';
     
     return `
         <!-- Horizontal Set Overview -->
@@ -410,7 +415,9 @@ function renderSet(exerciseId, exercise) {
         </div>
         
         <!-- Current Set Details -->
-        <div class="current-set-details ${exercise.detailsHidden ? 'hidden' : ''}">
+        <div class="current-set-details ${exercise.detailsHidden ? 'hidden' : ''}" 
+             id="set-details-${exerciseId}"
+             data-exercise-id="${exerciseId}">
             <div class="current-set-header">
                 <span class="current-set-title">Set ${selectedIndex + 1} Details</span>
                 <button class="delete-set-btn" onclick="deleteSet(${exerciseId}, ${selectedIndex})">
@@ -418,10 +425,86 @@ function renderSet(exerciseId, exercise) {
                 </button>
             </div>
             
-            <div class="set-values-compact">
+            <!-- View Mode Tabs -->
+            <div class="view-mode-tabs">
+                <button class="view-tab ${viewMode === 'planned' ? 'active' : ''}" 
+                        onclick="toggleViewMode(${exerciseId}, 'planned')">
+                    <i class="bi bi-clipboard-check"></i> Planned
+                </button>
+                <button class="view-tab ${viewMode === 'actual' ? 'active' : ''}" 
+                        onclick="toggleViewMode(${exerciseId}, 'actual')">
+                    <i class="bi bi-check-circle"></i> Actual
+                </button>
+            </div>
+            
+            <!-- View Indicators -->
+            <div class="view-indicators">
+                <span class="view-dot ${viewMode === 'planned' ? 'active' : ''}"></span>
+                <span class="view-dot ${viewMode === 'actual' ? 'active' : ''}"></span>
+            </div>
+            
+            <!-- Copy Button (shown in actual view) -->
+            ${viewMode === 'actual' ? `
+                <button class="copy-planned-btn" onclick="copyPlannedToActual(${exerciseId}, ${selectedIndex})">
+                    <i class="bi bi-arrow-left-right"></i> Copy Planned → Actual
+                </button>
+            ` : ''}
+            
+            <!-- Mobile Single Column View -->
+            <div class="set-values-mobile" data-view-mode="${viewMode}">
+                ${renderMobileValueColumn(exerciseId, selectedIndex, viewMode, selectedSet)}
+            </div>
+            
+            <!-- Desktop Two Column View -->
+            <div class="set-values-compact set-values-desktop">
                 ${renderCompactValueRow(exerciseId, selectedIndex, 'weight', 'Weight (lbs)', selectedSet, 5)}
                 ${renderCompactValueRow(exerciseId, selectedIndex, 'reps', 'Reps', selectedSet, 1)}
                 ${renderCompactValueRow(exerciseId, selectedIndex, 'time', 'Time (sec)', selectedSet, 5)}
+            </div>
+        </div>
+    `;
+}
+
+function renderMobileValueColumn(exerciseId, setIndex, viewMode, set) {
+    const type = viewMode; // 'planned' or 'actual'
+    return `
+        <div class="mobile-value-row">
+            <div class="mobile-value-label">Weight (lbs)</div>
+            <div class="mobile-value-controls">
+                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'weight', -5)">−</button>
+                <input type="number" 
+                       id="${type}-weight-${exerciseId}-${setIndex}"
+                       class="value-input-mobile" 
+                       value="${set[type].weight}"
+                       onchange="handleDirectInput(${exerciseId}, ${setIndex}, '${type}', 'weight', this.value)"
+                       inputmode="numeric">
+                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'weight', 5)">+</button>
+            </div>
+        </div>
+        <div class="mobile-value-row">
+            <div class="mobile-value-label">Reps</div>
+            <div class="mobile-value-controls">
+                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'reps', -1)">−</button>
+                <input type="number" 
+                       id="${type}-reps-${exerciseId}-${setIndex}"
+                       class="value-input-mobile" 
+                       value="${set[type].reps}"
+                       onchange="handleDirectInput(${exerciseId}, ${setIndex}, '${type}', 'reps', this.value)"
+                       inputmode="numeric">
+                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'reps', 1)">+</button>
+            </div>
+        </div>
+        <div class="mobile-value-row">
+            <div class="mobile-value-label">Time (sec)</div>
+            <div class="mobile-value-controls">
+                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'time', -5)">−</button>
+                <input type="number" 
+                       id="${type}-time-${exerciseId}-${setIndex}"
+                       class="value-input-mobile" 
+                       value="${set[type].time}"
+                       onchange="handleDirectInput(${exerciseId}, ${setIndex}, '${type}', 'time', this.value)"
+                       inputmode="numeric">
+                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'time', 5)">+</button>
             </div>
         </div>
     `;
@@ -529,6 +612,79 @@ function pad(num) {
     return num.toString().padStart(2, '0');
 }
 
+// View Mode Toggle & Swipe Detection
+function toggleViewMode(exerciseId, mode) {
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+    
+    exercise.viewMode = mode || (exercise.viewMode === 'planned' ? 'actual' : 'planned');
+    saveCurrentWorkout();
+    renderExercises();
+}
+
+function copyPlannedToActual(exerciseId, setIndex) {
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise || !exercise.sets[setIndex]) return;
+    
+    const set = exercise.sets[setIndex];
+    set.actual.weight = set.planned.weight;
+    set.actual.reps = set.planned.reps;
+    set.actual.time = set.planned.time;
+    
+    saveCurrentWorkout();
+    renderExercises();
+}
+
+// Initialize swipe detection when exercises are rendered
+function initializeSwipeDetection() {
+    const setDetails = document.querySelectorAll('.current-set-details');
+    
+    setDetails.forEach(detail => {
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const exerciseId = parseInt(detail.dataset.exerciseId);
+        
+        detail.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        
+        detail.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe(exerciseId, touchStartX, touchEndX);
+        }, { passive: true });
+    });
+}
+
+function handleSwipe(exerciseId, startX, endX) {
+    const swipeThreshold = 50;
+    const swipeDistance = endX - startX;
+    
+    if (Math.abs(swipeDistance) < swipeThreshold) return;
+    
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+    
+    if (swipeDistance > 0) {
+        // Swipe right - go to Planned
+        if (exercise.viewMode === 'actual') {
+            toggleViewMode(exerciseId, 'planned');
+            vibrateDevice(10);
+        }
+    } else {
+        // Swipe left - go to Actual
+        if (exercise.viewMode === 'planned') {
+            toggleViewMode(exerciseId, 'actual');
+            vibrateDevice(10);
+        }
+    }
+}
+
+function vibrateDevice(duration) {
+    if ('vibrate' in navigator) {
+        navigator.vibrate(duration);
+    }
+}
+
 // LocalStorage
 function saveCurrentWorkout() {
     localStorage.setItem('currentWorkout', JSON.stringify(currentWorkout));
@@ -605,7 +761,7 @@ function viewWorkoutDetail(workoutId) {
     
     const modal = new bootstrap.Modal(document.getElementById('workoutDetailModal'));
     const date = new Date(workout.startTime);
-    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const dateStr = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
     
     document.getElementById('workoutDetailTitle').textContent = dateStr;
     
@@ -613,44 +769,117 @@ function viewWorkoutDetail(workoutId) {
     const endTime = workout.endTime ? new Date(workout.endTime) : null;
     const durationStr = formatDuration(workout.duration || 0);
     
+    // Calculate workout statistics
+    const stats = calculateWorkoutStats(workout);
+    
     const detailsHtml = `
-        <div class="workout-detail-meta">
-            <div class="detail-item">
+        <!-- Enhanced Stats Header -->
+        <div class="detail-stats-header">
+            <div class="detail-stat-card">
                 <i class="bi bi-stopwatch"></i>
-                <strong>Duration:</strong> ${durationStr}
+                <div class="detail-stat-value">${durationStr}</div>
+                <div class="detail-stat-label">Duration</div>
             </div>
-            <div class="detail-item">
-                <i class="bi bi-clock"></i>
-                <strong>Started:</strong> ${startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+            <div class="detail-stat-card">
+                <i class="bi bi-stack"></i>
+                <div class="detail-stat-value">${stats.totalSets}</div>
+                <div class="detail-stat-label">Total Sets</div>
             </div>
-            ${endTime ? `
-                <div class="detail-item">
-                    <i class="bi bi-check-circle"></i>
-                    <strong>Completed:</strong> ${endTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                </div>
-            ` : ''}
+            <div class="detail-stat-card">
+                <i class="bi bi-lightning-charge"></i>
+                <div class="detail-stat-value">${formatVolume(stats.totalVolume)}</div>
+                <div class="detail-stat-label">Volume</div>
+            </div>
         </div>
         
-        <div class="workout-detail-exercises">
-            ${workout.exercises.map(exercise => `
-                <div class="detail-exercise-card">
-                    <div class="detail-exercise-header">
-                        <strong>${exercise.name}</strong>
-                        <span class="badge bg-primary">${exercise.sets.length} sets</span>
+        <!-- Performance Summary -->
+        <div class="detail-performance">
+            <div class="performance-header">
+                <span class="performance-title">Performance</span>
+                <span class="performance-badge ${getPerformanceBadgeClass(stats.completionRate)}">
+                    ${stats.completionRate}% <i class="bi bi-${stats.completionRate >= 90 ? 'check-circle-fill' : stats.completionRate >= 70 ? 'exclamation-circle-fill' : 'x-circle-fill'}"></i>
+                </span>
+            </div>
+            <div class="performance-bar">
+                <div class="performance-bar-fill" style="width: ${stats.completionRate}%"></div>
+            </div>
+            <div class="performance-text">
+                ${stats.completedSets} of ${stats.totalSets} sets completed
+            </div>
+        </div>
+        
+        <!-- Workout Highlights -->
+        ${stats.highlights.length > 0 ? `
+            <div class="detail-highlights">
+                <div class="highlights-title"><i class="bi bi-stars"></i> Workout Highlights</div>
+                ${stats.highlights.map(h => `
+                    <div class="highlight-item">
+                        <span class="highlight-icon">${h.icon}</span>
+                        <span class="highlight-text">${h.text}</span>
                     </div>
-                    <div class="detail-sets">
-                        ${exercise.sets.map((set, index) => `
-                            <div class="detail-set-row">
-                                <span class="detail-set-number">Set ${index + 1}</span>
-                                <div class="detail-set-values">
-                                    <span class="detail-planned">P: ${set.planned.weight}lbs × ${set.planned.reps}${set.planned.time > 0 ? ` (${set.planned.time}s)` : ''}</span>
-                                    <span class="detail-actual">A: ${set.actual.weight}lbs × ${set.actual.reps}${set.actual.time > 0 ? ` (${set.actual.time}s)` : ''}</span>
-                                </div>
+                `).join('')}
+            </div>
+        ` : ''}
+        
+        <!-- Exercise Details -->
+        <div class="detail-exercises-section">
+            <div class="exercises-section-title">Exercises</div>
+            ${workout.exercises.map((exercise, exIndex) => {
+                const exStats = calculateExerciseStats(exercise);
+                return `
+                <div class="detail-exercise-card-new ${exStats.allCompleted ? 'all-completed' : ''}" data-exercise-id="${exIndex}">
+                    <div class="detail-exercise-header-new" onclick="toggleDetailExercise(${exIndex})">
+                        <div class="exercise-header-left-new">
+                            ${exStats.allCompleted ? '<i class="bi bi-check-circle-fill exercise-check"></i>' : '<i class="bi bi-circle exercise-check-empty"></i>'}
+                            <div>
+                                <div class="exercise-name-new">${exercise.name}</div>
+                                <div class="exercise-summary-new">${exStats.summary}</div>
                             </div>
-                        `).join('')}
+                        </div>
+                        <div class="exercise-header-right-new">
+                            <span class="exercise-sets-badge">${exercise.sets.length} sets</span>
+                            <i class="bi bi-chevron-down exercise-chevron"></i>
+                        </div>
+                    </div>
+                    <div class="detail-exercise-body-new" style="display: none;">
+                        <div class="detail-sets-table">
+                            <div class="sets-table-header">
+                                <div class="set-col-number">Set</div>
+                                <div class="set-col-planned">Planned</div>
+                                <div class="set-col-actual">Actual</div>
+                                <div class="set-col-status">Status</div>
+                            </div>
+                            ${exercise.sets.map((set, index) => {
+                                const setStatus = getSetStatus(set);
+                                return `
+                                <div class="sets-table-row ${setStatus.class}">
+                                    <div class="set-col-number">${index + 1}</div>
+                                    <div class="set-col-planned">
+                                        ${set.planned.weight}lbs × ${set.planned.reps}
+                                        ${set.planned.time > 0 ? `<span class="set-time">${set.planned.time}s</span>` : ''}
+                                    </div>
+                                    <div class="set-col-actual">
+                                        ${set.actual.weight}lbs × ${set.actual.reps}
+                                        ${set.actual.time > 0 ? `<span class="set-time">${set.actual.time}s</span>` : ''}
+                                    </div>
+                                    <div class="set-col-status">
+                                        <span class="status-icon" title="${setStatus.title}">
+                                            <i class="bi bi-${setStatus.icon}"></i> ${setStatus.arrow}
+                                        </span>
+                                    </div>
+                                </div>
+                                ${setStatus.completed ? `
+                                    <div class="set-progress-bar">
+                                        <div class="set-progress-fill" style="width: ${setStatus.percentage}%"></div>
+                                    </div>
+                                ` : ''}
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
                 </div>
-            `).join('')}
+                `;
+            }).join('')}
         </div>
     `;
     
@@ -668,6 +897,180 @@ function viewWorkoutDetail(workoutId) {
     };
     
     modal.show();
+}
+
+function calculateWorkoutStats(workout) {
+    let totalSets = 0;
+    let completedSets = 0;
+    let totalVolume = 0;
+    let plannedVolume = 0;
+    let heaviestSet = { weight: 0, exercise: '', reps: 0 };
+    let mostVolumeExercise = { name: '', volume: 0 };
+    let perfectExercises = [];
+    
+    workout.exercises.forEach(exercise => {
+        let exerciseVolume = 0;
+        let exercisePerfect = true;
+        
+        exercise.sets.forEach(set => {
+            totalSets++;
+            const actualVol = set.actual.weight * set.actual.reps;
+            const plannedVol = set.planned.weight * set.planned.reps;
+            
+            totalVolume += actualVol;
+            plannedVolume += plannedVol;
+            exerciseVolume += actualVol;
+            
+            if (set.actual.weight > 0 || set.actual.reps > 0) {
+                completedSets++;
+            } else {
+                exercisePerfect = false;
+            }
+            
+            if (set.actual.weight > heaviestSet.weight) {
+                heaviestSet = { weight: set.actual.weight, exercise: exercise.name, reps: set.actual.reps };
+            }
+        });
+        
+        if (exerciseVolume > mostVolumeExercise.volume) {
+            mostVolumeExercise = { name: exercise.name, volume: exerciseVolume };
+        }
+        
+        if (exercisePerfect && exercise.sets.length > 0) {
+            perfectExercises.push(exercise.name);
+        }
+    });
+    
+    const completionRate = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+    
+    // Generate highlights
+    const highlights = [];
+    if (heaviestSet.weight > 0) {
+        highlights.push({
+            icon: '💪',
+            text: `Heaviest Set: ${heaviestSet.exercise} - ${heaviestSet.weight}lbs × ${heaviestSet.reps}`
+        });
+    }
+    if (mostVolumeExercise.volume > 0) {
+        highlights.push({
+            icon: '🔥',
+            text: `Most Volume: ${mostVolumeExercise.name} - ${formatVolume(mostVolumeExercise.volume)}`
+        });
+    }
+    if (perfectExercises.length > 0) {
+        highlights.push({
+            icon: '⭐',
+            text: `All Targets Hit: ${perfectExercises[0]}${perfectExercises.length > 1 ? ` +${perfectExercises.length - 1} more` : ''}`
+        });
+    }
+    
+    return {
+        totalSets,
+        completedSets,
+        completionRate,
+        totalVolume,
+        plannedVolume,
+        highlights
+    };
+}
+
+function calculateExerciseStats(exercise) {
+    let totalVolume = 0;
+    let completedSets = 0;
+    
+    exercise.sets.forEach(set => {
+        totalVolume += set.actual.weight * set.actual.reps;
+        if (set.actual.weight > 0 || set.actual.reps > 0) {
+            completedSets++;
+        }
+    });
+    
+    const allCompleted = completedSets === exercise.sets.length && exercise.sets.length > 0;
+    const avgWeight = exercise.sets.length > 0 ? 
+        Math.round(exercise.sets.reduce((sum, s) => sum + s.actual.weight, 0) / exercise.sets.length) : 0;
+    const avgReps = exercise.sets.length > 0 ? 
+        Math.round(exercise.sets.reduce((sum, s) => sum + s.actual.reps, 0) / exercise.sets.length) : 0;
+    
+    return {
+        allCompleted,
+        summary: `${completedSets}/${exercise.sets.length} sets • ${avgWeight}lbs × ${avgReps} avg • ${formatVolume(totalVolume)}`
+    };
+}
+
+function getSetStatus(set) {
+    const actualVol = set.actual.weight * set.actual.reps;
+    const plannedVol = set.planned.weight * set.planned.reps;
+    
+    if (actualVol === 0) {
+        return { 
+            class: 'set-missed', 
+            icon: 'x-circle-fill', 
+            arrow: '', 
+            title: 'Not completed',
+            completed: false,
+            percentage: 0
+        };
+    }
+    
+    const percentage = plannedVol > 0 ? Math.round((actualVol / plannedVol) * 100) : 100;
+    
+    if (actualVol > plannedVol) {
+        return { 
+            class: 'set-exceeded', 
+            icon: 'check-circle-fill', 
+            arrow: '↑', 
+            title: 'Exceeded target',
+            completed: true,
+            percentage: Math.min(percentage, 150)
+        };
+    } else if (actualVol === plannedVol) {
+        return { 
+            class: 'set-matched', 
+            icon: 'check-circle-fill', 
+            arrow: '→', 
+            title: 'Target hit',
+            completed: true,
+            percentage: 100
+        };
+    } else {
+        return { 
+            class: 'set-partial', 
+            icon: 'exclamation-circle-fill', 
+            arrow: '↓', 
+            title: 'Below target',
+            completed: true,
+            percentage
+        };
+    }
+}
+
+function formatVolume(volume) {
+    if (volume >= 1000) {
+        return (volume / 1000).toFixed(1) + 'k lbs';
+    }
+    return volume + ' lbs';
+}
+
+function getPerformanceBadgeClass(rate) {
+    if (rate >= 90) return 'badge-excellent';
+    if (rate >= 70) return 'badge-good';
+    return 'badge-needs-work';
+}
+
+function toggleDetailExercise(exerciseId) {
+    const card = document.querySelector(`[data-exercise-id="${exerciseId}"]`);
+    if (!card) return;
+    
+    const body = card.querySelector('.detail-exercise-body-new');
+    const chevron = card.querySelector('.exercise-chevron');
+    
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+    } else {
+        body.style.display = 'none';
+        chevron.style.transform = 'rotate(0deg)';
+    }
 }
 
 function deleteWorkout(workoutId) {
@@ -701,6 +1104,7 @@ function useAsTemplate(workoutId) {
             name: exercise.name,
             collapsed: false,
             detailsHidden: false,
+            viewMode: 'planned',
             selectedSetIndex: 0,
             sets: exercise.sets.map(set => ({
                 collapsed: false,

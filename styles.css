@@ -1049,3 +1049,624 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
     -moz-appearance: textfield;
 }
+
+/* ========================================
+   ENHANCED WORKOUT DETAIL VIEW STYLES
+   ======================================== */
+
+/* View Mode Tabs */
+.view-mode-tabs {
+    display: none; /* Hidden on desktop, shown on mobile */
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.view-tab {
+    flex: 1;
+    padding: 10px 16px;
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.view-tab:active {
+    transform: scale(0.98);
+}
+
+.view-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+}
+
+.view-tab i {
+    font-size: 16px;
+}
+
+/* View Indicators (Dots) */
+.view-indicators {
+    display: none; /* Hidden on desktop, shown on mobile */
+    justify-content: center;
+    gap: 6px;
+    margin: 8px 0;
+}
+
+.view-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.view-dot.active {
+    background: #667eea;
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* Copy Planned Button */
+.copy-planned-btn {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border: 2px dashed #667eea;
+    border-radius: 8px;
+    color: #667eea;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    margin: 12px 0;
+    display: none; /* Hidden on desktop, shown on mobile */
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+}
+
+.copy-planned-btn:active {
+    transform: scale(0.98);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+}
+
+.copy-planned-btn i {
+    font-size: 16px;
+}
+
+/* Mobile Single Column View */
+.set-values-mobile {
+    display: none; /* Hidden on desktop */
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mobile-value-row {
+    background: var(--light-bg);
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.mobile-value-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.mobile-value-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-control-mobile {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--border-color);
+    background: white;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #495057;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-control-mobile:active {
+    transform: scale(0.95);
+    background: var(--light-bg);
+    border-color: var(--primary-color);
+}
+
+.value-input-mobile {
+    flex: 1;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 20px;
+    font-weight: 600;
+    min-width: 0;
+    background: white;
+}
+
+.value-input-mobile:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* Desktop Two Column View */
+.set-values-desktop {
+    display: flex; /* Shown on desktop */
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 575px) {
+    /* Show mobile elements */
+    .view-mode-tabs {
+        display: flex;
+    }
+    
+    .view-indicators {
+        display: flex;
+    }
+    
+    .copy-planned-btn {
+        display: flex;
+    }
+    
+    .set-values-mobile {
+        display: flex;
+    }
+    
+    /* Hide desktop elements */
+    .set-values-desktop {
+        display: none !important;
+    }
+    
+    /* Add swipe hint */
+    .current-set-details::after {
+        content: '← Swipe to switch →';
+        display: block;
+        text-align: center;
+        font-size: 12px;
+        color: #adb5bd;
+        margin-top: 12px;
+        font-style: italic;
+    }
+    
+    /* Smooth transition for view changes */
+    .set-values-mobile {
+        animation: slideIn 0.3s ease;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ========================================
+   ENHANCED WORKOUT DETAIL VIEW STYLES
+   ======================================== */
+
+/* Stats Header Cards */
+.detail-stats-header {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.detail-stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.detail-stat-card i {
+    font-size: 24px;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.detail-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.detail-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+}
+
+/* Performance Section */
+.detail-performance {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.performance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.performance-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.performance-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.badge-excellent {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-good {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-needs-work {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.performance-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.performance-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    transition: width 0.8s ease;
+}
+
+.performance-text {
+    font-size: 13px;
+    color: #6c757d;
+    text-align: center;
+}
+
+/* Workout Highlights */
+.detail-highlights {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.highlights-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.highlight-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #495057;
+}
+
+.highlight-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.highlight-text {
+    flex: 1;
+}
+
+/* Exercises Section */
+.detail-exercises-section {
+    margin-top: 20px;
+}
+
+.exercises-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+/* New Exercise Card Design */
+.detail-exercise-card-new {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    border-left: 4px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.detail-exercise-card-new.all-completed {
+    border-left-color: #28a745;
+}
+
+.detail-exercise-header-new {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    background: #f8f9fa;
+    transition: background 0.2s;
+}
+
+.detail-exercise-header-new:active {
+    background: #e9ecef;
+}
+
+.exercise-header-left-new {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.exercise-check {
+    color: #28a745;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.exercise-check-empty {
+    color: #dee2e6;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.exercise-name-new {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.exercise-summary-new {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.exercise-header-right-new {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.exercise-sets-badge {
+    background: #667eea;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.exercise-chevron {
+    color: #6c757d;
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+/* Exercise Body */
+.detail-exercise-body-new {
+    padding: 16px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Sets Table */
+.detail-sets-table {
+    width: 100%;
+}
+
+.sets-table-header {
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 60px;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.sets-table-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 60px;
+    gap: 8px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    font-size: 14px;
+    align-items: center;
+    border: 1px solid #e9ecef;
+}
+
+.sets-table-row.set-exceeded {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(40, 167, 69, 0.1) 100%);
+    border-color: rgba(40, 167, 69, 0.3);
+}
+
+.sets-table-row.set-matched {
+    background: rgba(40, 167, 69, 0.03);
+    border-color: rgba(40, 167, 69, 0.2);
+}
+
+.sets-table-row.set-partial {
+    background: rgba(255, 193, 7, 0.05);
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+.sets-table-row.set-missed {
+    background: rgba(220, 53, 69, 0.05);
+    border-color: rgba(220, 53, 69, 0.2);
+    opacity: 0.6;
+}
+
+.set-col-number {
+    font-weight: 600;
+    color: #6c757d;
+    text-align: center;
+}
+
+.set-col-planned {
+    color: #495057;
+    font-size: 13px;
+}
+
+.set-col-actual {
+    color: #28a745;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.set-col-status {
+    text-align: center;
+}
+
+.status-icon {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.set-exceeded .status-icon {
+    color: #28a745;
+}
+
+.set-matched .status-icon {
+    color: #28a745;
+}
+
+.set-partial .status-icon {
+    color: #ffc107;
+}
+
+.set-missed .status-icon {
+    color: #dc3545;
+}
+
+.set-time {
+    display: inline-block;
+    font-size: 11px;
+    color: #6c757d;
+    margin-left: 4px;
+}
+
+/* Set Progress Bar */
+.set-progress-bar {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin: -8px 12px 8px 12px;
+}
+
+.set-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+}
+
+/* Modal Adjustments */
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 16px 20px;
+    gap: 8px;
+}
+
+/* Responsive adjustments for detail view */
+@media (max-width: 380px) {
+    .detail-stats-header {
+        gap: 8px;
+    }
+    
+    .detail-stat-card {
+        padding: 12px 8px;
+    }
+    
+    .detail-stat-value {
+        font-size: 18px;
+    }
+    
+    .sets-table-header,
+    .sets-table-row {
+        grid-template-columns: 35px 1fr 1fr 50px;
+        gap: 6px;
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+}
