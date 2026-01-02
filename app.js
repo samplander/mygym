@@ -29,6 +29,25 @@ function initializeApp() {
         if (e.key === 'Enter') saveExercise();
     });
     
+    // Exercise Library listeners
+    const saveLibraryBtn = document.getElementById('saveExerciseLibraryBtn');
+    if (saveLibraryBtn) {
+        saveLibraryBtn.addEventListener('click', saveExerciseLibraryItem);
+    }
+    
+    const libraryNameInput = document.getElementById('exerciseLibraryNameInput');
+    if (libraryNameInput) {
+        libraryNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') saveExerciseLibraryItem();
+        });
+    }
+    
+    // Initialize search
+    setTimeout(() => initializeExerciseSearch(), 100);
+    
+    // Initialize autocomplete
+    initializeAutocomplete();
+    
     // Render quick stats
     renderQuickStats();
     
@@ -84,12 +103,14 @@ function showHomeScreen() {
     document.getElementById('homeScreen').classList.remove('d-none');
     document.getElementById('workoutScreen').classList.add('d-none');
     document.getElementById('historyScreen').classList.add('d-none');
+    document.getElementById('settingsScreen').classList.add('d-none');
 }
 
 function showWorkoutScreen() {
     document.getElementById('homeScreen').classList.add('d-none');
     document.getElementById('workoutScreen').classList.remove('d-none');
     document.getElementById('historyScreen').classList.add('d-none');
+    document.getElementById('settingsScreen').classList.add('d-none');
     renderExercises();
     startTimer();
 }
@@ -98,7 +119,16 @@ function showHistoryScreen() {
     document.getElementById('homeScreen').classList.add('d-none');
     document.getElementById('workoutScreen').classList.add('d-none');
     document.getElementById('historyScreen').classList.remove('d-none');
+    document.getElementById('settingsScreen').classList.add('d-none');
     renderHistory();
+}
+
+function showSettingsScreen() {
+    document.getElementById('homeScreen').classList.add('d-none');
+    document.getElementById('workoutScreen').classList.add('d-none');
+    document.getElementById('historyScreen').classList.add('d-none');
+    document.getElementById('settingsScreen').classList.remove('d-none');
+    renderExerciseLibrary();
 }
 
 // Workout Management
@@ -177,6 +207,24 @@ function saveExercise() {
         return;
     }
     
+    // Check if "Add to Library" checkbox is checked and visible
+    const addToLibraryContainer = document.getElementById('addToLibraryContainer');
+    const addToLibraryCheckbox = document.getElementById('addToLibraryCheckbox');
+    const categorySelect = document.getElementById('quickCategorySelect');
+    
+    if (addToLibraryContainer.style.display !== 'none' && addToLibraryCheckbox.checked) {
+        // Add the exercise to the library if it doesn't exist
+        const library = loadExerciseLibrary();
+        const existingExercise = library.find(ex => ex.name.toLowerCase() === name.toLowerCase());
+        
+        if (!existingExercise) {
+            addExerciseToLibrary(name, categorySelect.value);
+        }
+    }
+    
+    // Update usage stats if selecting from library
+    updateExerciseUsage(name);
+    
     const exercise = {
         id: Date.now(),
         name: name,
@@ -196,9 +244,14 @@ function saveExercise() {
     saveCurrentWorkout();
     renderExercises();
     
-    // Close modal
+    // Close modal and reset
     const modal = bootstrap.Modal.getInstance(document.getElementById('addExerciseModal'));
     modal.hide();
+    
+    // Reset input and hide autocomplete
+    document.getElementById('exerciseNameInput').value = '';
+    hideAutocomplete();
+    addToLibraryContainer.style.display = 'none';
 }
 
 function deleteExercise(exerciseId) {
@@ -1148,4 +1201,390 @@ function useAsTemplate(workoutId) {
     showWorkoutScreen();
     
     alert('Template loaded! Adjust values as needed.');
+}
+
+// ===== EXERCISE LIBRARY MANAGEMENT =====
+
+function loadExerciseLibrary() {
+    const library = localStorage.getItem('exerciseLibrary');
+    return library ? JSON.parse(library) : getDefaultExercises();
+}
+
+function saveExerciseLibrary(library) {
+    localStorage.setItem('exerciseLibrary', JSON.stringify(library));
+}
+
+function getDefaultExercises() {
+    return [
+        { id: Date.now(), name: "Bench Press", category: "Push", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 },
+        { id: Date.now() + 1, name: "Squats", category: "Legs", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 },
+        { id: Date.now() + 2, name: "Deadlift", category: "Pull", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 },
+        { id: Date.now() + 3, name: "Overhead Press", category: "Push", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 },
+        { id: Date.now() + 4, name: "Pull-ups", category: "Pull", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 }
+    ];
+}
+
+function renderExerciseLibrary(searchQuery = '') {
+    const library = loadExerciseLibrary();
+    const container = document.getElementById('exerciseLibraryList');
+    
+    if (!container) return;
+    
+    // Filter by search
+    const filtered = searchQuery 
+        ? library.filter(ex => ex.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        : library;
+    
+    // Sort by usage count (most used first), then alphabetically
+    const sorted = filtered.sort((a, b) => {
+        if (b.usageCount !== a.usageCount) {
+            return b.usageCount - a.usageCount;
+        }
+        return a.name.localeCompare(b.name);
+    });
+    
+    // Update count
+    const countEl = document.getElementById('exerciseCount');
+    if (countEl) {
+        countEl.textContent = `${library.length} exercise${library.length !== 1 ? 's' : ''}`;
+    }
+    
+    if (sorted.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-search"></i>
+                <p>No exercises found</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = sorted.map(exercise => `
+        <div class="exercise-library-card">
+            <div class="exercise-library-info">
+                <div class="exercise-library-name">
+                    ${exercise.category ? `<span class="category-badge">${exercise.category}</span>` : ''}
+                    ${exercise.name}
+                </div>
+                <div class="exercise-library-meta">
+                    ${exercise.usageCount > 0 
+                        ? `Used ${exercise.usageCount} time${exercise.usageCount !== 1 ? 's' : ''}`
+                        : 'Never used'}
+                </div>
+            </div>
+            <div class="exercise-library-actions">
+                <button class="btn-icon-action" onclick="editExerciseLibrary(${exercise.id})" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn-icon-action btn-delete" onclick="deleteExerciseLibrary(${exercise.id})" title="Delete">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showAddExerciseLibraryModal() {
+    const modal = new bootstrap.Modal(document.getElementById('exerciseLibraryModal'));
+    document.getElementById('exerciseLibraryModalTitle').textContent = 'Add Exercise';
+    document.getElementById('exerciseLibraryId').value = '';
+    document.getElementById('exerciseLibraryNameInput').value = '';
+    document.getElementById('exerciseLibraryCategoryInput').value = '';
+    modal.show();
+    setTimeout(() => document.getElementById('exerciseLibraryNameInput').focus(), 300);
+}
+
+function editExerciseLibrary(exerciseId) {
+    const library = loadExerciseLibrary();
+    const exercise = library.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+    
+    const modal = new bootstrap.Modal(document.getElementById('exerciseLibraryModal'));
+    document.getElementById('exerciseLibraryModalTitle').textContent = 'Edit Exercise';
+    document.getElementById('exerciseLibraryId').value = exercise.id;
+    document.getElementById('exerciseLibraryNameInput').value = exercise.name;
+    document.getElementById('exerciseLibraryCategoryInput').value = exercise.category || '';
+    modal.show();
+    setTimeout(() => document.getElementById('exerciseLibraryNameInput').focus(), 300);
+}
+
+function saveExerciseLibraryItem() {
+    const id = document.getElementById('exerciseLibraryId').value;
+    const name = document.getElementById('exerciseLibraryNameInput').value.trim();
+    const category = document.getElementById('exerciseLibraryCategoryInput').value;
+    
+    if (!name) {
+        alert('Please enter an exercise name');
+        return;
+    }
+    
+    let library = loadExerciseLibrary();
+    
+    if (id) {
+        // Update existing
+        const index = library.findIndex(ex => ex.id == id);
+        if (index !== -1) {
+            library[index].name = name;
+            library[index].category = category;
+        }
+    } else {
+        // Create new
+        library.push({
+            id: Date.now(),
+            name: name,
+            category: category,
+            createdAt: new Date().toISOString(),
+            lastUsed: null,
+            usageCount: 0
+        });
+    }
+    
+    saveExerciseLibrary(library);
+    renderExerciseLibrary();
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('exerciseLibraryModal'));
+    modal.hide();
+}
+
+// ============================================
+// AUTOCOMPLETE FUNCTIONALITY
+// ============================================
+
+let selectedAutocompleteIndex = -1;
+
+function initializeAutocomplete() {
+    const input = document.getElementById('exerciseNameInput');
+    const addToLibraryCheckbox = document.getElementById('addToLibraryCheckbox');
+    const addToLibraryContainer = document.getElementById('addToLibraryContainer');
+    const categorySelectContainer = document.getElementById('categorySelectContainer');
+    
+    if (!input) return;
+    
+    // Input event - show suggestions as user types
+    input.addEventListener('input', (e) => {
+        const value = e.target.value.trim();
+        
+        if (value.length === 0) {
+            hideAutocomplete();
+            addToLibraryContainer.style.display = 'none';
+            return;
+        }
+        
+        showAutocompleteSuggestions(value);
+    });
+    
+    // Keyboard navigation
+    input.addEventListener('keydown', (e) => {
+        const dropdown = document.getElementById('autocompleteDropdown');
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedAutocompleteIndex = Math.min(selectedAutocompleteIndex + 1, items.length - 1);
+            updateAutocompleteSelection(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedAutocompleteIndex = Math.max(selectedAutocompleteIndex - 1, -1);
+            updateAutocompleteSelection(items);
+        } else if (e.key === 'Enter') {
+            if (selectedAutocompleteIndex >= 0 && items[selectedAutocompleteIndex]) {
+                e.preventDefault();
+                items[selectedAutocompleteIndex].click();
+            }
+            // If no suggestion selected, default Enter behavior saves exercise
+        } else if (e.key === 'Escape') {
+            hideAutocomplete();
+        }
+    });
+    
+    // Toggle category selector based on checkbox
+    if (addToLibraryCheckbox) {
+        addToLibraryCheckbox.addEventListener('change', (e) => {
+            categorySelectContainer.style.display = e.target.checked ? 'block' : 'none';
+        });
+    }
+    
+    // Click outside to close
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.autocomplete-container')) {
+            hideAutocomplete();
+        }
+    });
+    
+    // Reset when modal closes
+    const addExerciseModal = document.getElementById('addExerciseModal');
+    if (addExerciseModal) {
+        addExerciseModal.addEventListener('hidden.bs.modal', () => {
+            input.value = '';
+            hideAutocomplete();
+            addToLibraryContainer.style.display = 'none';
+        });
+    }
+}
+
+function showAutocompleteSuggestions(searchText) {
+    const library = loadExerciseLibrary();
+    const dropdown = document.getElementById('autocompleteDropdown');
+    const addToLibraryContainer = document.getElementById('addToLibraryContainer');
+    const autocompleteHint = document.getElementById('autocompleteHint');
+    
+    if (!dropdown) return;
+    
+    // Filter and sort exercises
+    const filtered = library
+        .filter(ex => ex.name.toLowerCase().includes(searchText.toLowerCase()))
+        .sort((a, b) => {
+            // Smart sorting: usage count, then last used, then alphabetical
+            if (a.usageCount !== b.usageCount) {
+                return b.usageCount - a.usageCount; // Higher usage first
+            }
+            if (a.lastUsed && b.lastUsed) {
+                return new Date(b.lastUsed) - new Date(a.lastUsed); // More recent first
+            }
+            if (a.lastUsed && !b.lastUsed) return -1;
+            if (!a.lastUsed && b.lastUsed) return 1;
+            return a.name.localeCompare(b.name); // Alphabetical
+        });
+    
+    selectedAutocompleteIndex = -1;
+    
+    if (filtered.length === 0) {
+        // No matches - show "Add to Library" checkbox
+        dropdown.style.display = 'none';
+        addToLibraryContainer.style.display = 'block';
+        autocompleteHint.style.display = 'block';
+    } else {
+        // Show suggestions
+        dropdown.style.display = 'block';
+        addToLibraryContainer.style.display = 'none';
+        autocompleteHint.style.display = 'none';
+        
+        dropdown.innerHTML = filtered.map(ex => {
+            const categoryBadge = ex.category 
+                ? `<span class="category-badge-small">${ex.category}</span>` 
+                : '';
+            const usageInfo = ex.usageCount > 0 
+                ? `<span class="usage-stats-small">${ex.usageCount}x • ${formatLastUsed(ex.lastUsed)}</span>`
+                : '<span class="usage-stats-small">Never used</span>';
+            
+            return `
+                <div class="autocomplete-item" data-name="${ex.name}">
+                    <div class="autocomplete-item-main">
+                        <span class="autocomplete-item-name">${highlightMatch(ex.name, searchText)}</span>
+                        ${categoryBadge}
+                    </div>
+                    <div class="autocomplete-item-stats">${usageInfo}</div>
+                </div>
+            `;
+        }).join('');
+        
+        // Add click handlers
+        dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+            item.addEventListener('click', () => {
+                selectSuggestion(item.dataset.name);
+            });
+        });
+    }
+}
+
+function updateAutocompleteSelection(items) {
+    items.forEach((item, index) => {
+        if (index === selectedAutocompleteIndex) {
+            item.classList.add('active');
+            item.scrollIntoView({ block: 'nearest' });
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+function selectSuggestion(name) {
+    const input = document.getElementById('exerciseNameInput');
+    input.value = name;
+    hideAutocomplete();
+    
+    // Trigger saveExercise directly when selecting from library
+    saveExercise();
+}
+
+function hideAutocomplete() {
+    const dropdown = document.getElementById('autocompleteDropdown');
+    const autocompleteHint = document.getElementById('autocompleteHint');
+    
+    if (dropdown) dropdown.style.display = 'none';
+    if (autocompleteHint) autocompleteHint.style.display = 'none';
+    
+    selectedAutocompleteIndex = -1;
+}
+
+function highlightMatch(text, search) {
+    const regex = new RegExp(`(${search})`, 'gi');
+    return text.replace(regex, '<strong>$1</strong>');
+}
+
+function formatLastUsed(lastUsedDate) {
+    if (!lastUsedDate) return 'Never';
+    
+    const date = new Date(lastUsedDate);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
+    return `${Math.floor(diffDays / 365)}y ago`;
+}
+
+// Update exercise usage when adding to workout
+function updateExerciseUsage(exerciseName) {
+    const library = loadExerciseLibrary();
+    const exercise = library.find(ex => ex.name.toLowerCase() === exerciseName.toLowerCase());
+    
+    if (exercise) {
+        exercise.usageCount = (exercise.usageCount || 0) + 1;
+        exercise.lastUsed = new Date().toISOString();
+        saveExerciseLibrary(library);
+    }
+}
+
+// Add new exercise to library
+function addExerciseToLibrary(name, category = '') {
+    const library = loadExerciseLibrary();
+    
+    // Check if already exists
+    const exists = library.find(ex => ex.name.toLowerCase() === name.toLowerCase());
+    if (exists) return;
+    
+    library.push({
+        id: Date.now(),
+        name: name,
+        category: category,
+        createdAt: new Date().toISOString(),
+        lastUsed: null,
+        usageCount: 0
+    });
+    
+    saveExerciseLibrary(library);
+}
+
+function deleteExerciseLibrary(exerciseId) {
+    if (!confirm('Delete this exercise from library?')) return;
+    
+    let library = loadExerciseLibrary();
+    library = library.filter(ex => ex.id !== exerciseId);
+    saveExerciseLibrary(library);
+    renderExerciseLibrary();
+}
+
+function initializeExerciseSearch() {
+    const searchInput = document.getElementById('exerciseSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            renderExerciseLibrary(e.target.value);
+        });
+    }
 }

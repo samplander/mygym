@@ -38,9 +38,13 @@
                     <i class="bi bi-play-circle-fill"></i>
                     <span>Start Workout</span>
                 </button>
-                <button class="glass-btn glass-btn-secondary" onclick="showHistoryScreen()">
+                <button class="glass-btn glass-btn-secondary mb-3" onclick="showHistoryScreen()">
                     <i class="bi bi-clock-history"></i>
                     <span>View History</span>
+                </button>
+                <button class="glass-btn glass-btn-secondary" onclick="showSettingsScreen()">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
                 </button>
             </div>
         </div>
@@ -81,6 +85,12 @@
                     <i class="bi bi-clock-history"></i>
                 </div>
                 <span>History</span>
+            </button>
+            <button class="nav-item" onclick="showSettingsScreen()">
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-gear"></i>
+                </div>
+                <span>Settings</span>
             </button>
         </div>
     </div>
@@ -129,6 +139,87 @@
                 </div>
                 <span>History</span>
             </button>
+            <button class="nav-item" onclick="showSettingsScreen()">
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-gear"></i>
+                </div>
+                <span>Settings</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settingsScreen" class="screen d-none">
+        <!-- Sticky Header -->
+        <div class="sticky-header">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn-back" onclick="showHomeScreen()">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <h5 class="mb-0">Settings</h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="settings-content">
+            <!-- Exercise Library Section -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h6><i class="bi bi-bookmark-star"></i> Exercise Library</h6>
+                    <span class="exercise-count" id="exerciseCount">0 exercises</span>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="exercise-search-container">
+                    <input type="text" 
+                           id="exerciseSearchInput" 
+                           class="form-control" 
+                           placeholder="🔍 Search exercises..."
+                           autocomplete="off">
+                </div>
+                
+                <!-- Add Exercise Button -->
+                <button class="btn btn-primary w-100 mb-3" onclick="showAddExerciseLibraryModal()">
+                    <i class="bi bi-plus-circle"></i> Add New Exercise
+                </button>
+                
+                <!-- Exercise List -->
+                <div id="exerciseLibraryList" class="exercise-library-list">
+                    <!-- Exercises will be rendered here -->
+                </div>
+            </div>
+            
+            <!-- Future Settings Sections -->
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h6><i class="bi bi-palette"></i> Appearance</h6>
+                </div>
+                <p class="text-muted text-center py-3">Coming soon...</p>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-item" onclick="showHomeScreen()">
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-house-door"></i>
+                </div>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" onclick="showHistoryScreen()">
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <span>History</span>
+            </button>
+            <button class="nav-item active">
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-gear-fill"></i>
+                </div>
+                <span>Settings</span>
+            </button>
         </div>
     </div>
 
@@ -164,11 +255,96 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="text" id="exerciseNameInput" class="form-control form-control-lg" placeholder="Exercise name" autocomplete="off">
+                    <!-- Main Input with Autocomplete -->
+                    <div class="autocomplete-container">
+                        <input type="text" 
+                               id="exerciseNameInput" 
+                               class="form-control form-control-lg" 
+                               placeholder="Exercise name" 
+                               autocomplete="off">
+                        
+                        <!-- Autocomplete Dropdown -->
+                        <div id="autocompleteDropdown" class="autocomplete-dropdown">
+                            <!-- Suggestions will be rendered here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Add to Library Checkbox (shows when typing new exercise) -->
+                    <div id="addToLibraryContainer" class="mt-3" style="display: none;">
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="addToLibraryCheckbox" 
+                                   checked>
+                            <label class="form-check-label" for="addToLibraryCheckbox">
+                                Add to Exercise Library
+                            </label>
+                        </div>
+                        
+                        <!-- Category selector (shows when checkbox is checked) -->
+                        <div id="categorySelectContainer" class="mt-2">
+                            <label class="form-label small">Category (Optional)</label>
+                            <select id="quickCategorySelect" class="form-select form-select-sm">
+                                <option value="">No category</option>
+                                <option value="Push">Push</option>
+                                <option value="Pull">Pull</option>
+                                <option value="Legs">Legs</option>
+                                <option value="Core">Core</option>
+                                <option value="Cardio">Cardio</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Hint Text -->
+                    <div id="autocompleteHint" class="mt-2 text-muted small" style="display: none;">
+                        <i class="bi bi-info-circle"></i> Press Enter to add as new exercise
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" id="saveExerciseBtn" class="btn btn-primary">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Exercise Library Modal -->
+    <div class="modal fade" id="exerciseLibraryModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exerciseLibraryModalTitle">Add Exercise</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="exerciseLibraryId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Exercise Name *</label>
+                        <input type="text" 
+                               id="exerciseLibraryNameInput" 
+                               class="form-control form-control-lg" 
+                               placeholder="e.g., Bench Press" 
+                               autocomplete="off">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Category (Optional)</label>
+                        <select id="exerciseLibraryCategoryInput" class="form-select">
+                            <option value="">No category</option>
+                            <option value="Push">Push</option>
+                            <option value="Pull">Pull</option>
+                            <option value="Legs">Legs</option>
+                            <option value="Core">Core</option>
+                            <option value="Cardio">Cardio</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="saveExerciseLibraryBtn" class="btn btn-primary">Save</button>
                 </div>
             </div>
         </div>
