@@ -106,6 +106,7 @@ function startWorkout() {
     currentWorkout = {
         id: Date.now(),
         startTime: new Date().toISOString(),
+        accordionMode: true,
         exercises: []
     };
     saveCurrentWorkout();
@@ -186,6 +187,11 @@ function saveExercise() {
         sets: []
     };
     
+    // In accordion mode, collapse all others and open new one
+    if (currentWorkout.accordionMode) {
+        currentWorkout.exercises.forEach(ex => ex.collapsed = true);
+    }
+    
     currentWorkout.exercises.push(exercise);
     saveCurrentWorkout();
     renderExercises();
@@ -207,6 +213,13 @@ function deleteExercise(exerciseId) {
 function addSet(exerciseId) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
+    
+    // In accordion mode, ensure this exercise is expanded and others are collapsed
+    if (currentWorkout.accordionMode) {
+        currentWorkout.exercises.forEach(ex => {
+            ex.collapsed = ex.id !== exerciseId;
+        });
+    }
     
     // Get previous set values or use defaults
     const previousSet = exercise.sets[exercise.sets.length - 1];
@@ -293,7 +306,17 @@ function toggleExercise(exerciseId) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
     
-    exercise.collapsed = !exercise.collapsed;
+    const isOpening = exercise.collapsed;
+    
+    // If opening in accordion mode, close all others
+    if (isOpening && currentWorkout.accordionMode) {
+        currentWorkout.exercises.forEach(ex => {
+            ex.collapsed = ex.id !== exerciseId;
+        });
+    } else {
+        exercise.collapsed = !exercise.collapsed;
+    }
+    
     saveCurrentWorkout();
     renderExercises();
 }
@@ -322,26 +345,29 @@ function toggleAllExercises() {
     // Check if any exercise is expanded
     const anyExpanded = currentWorkout.exercises.some(ex => !ex.collapsed);
     
-    // If any expanded, collapse all. If all collapsed, expand all
-    const newState = anyExpanded;
-    
-    currentWorkout.exercises.forEach(exercise => {
-        exercise.collapsed = newState;
-    });
-    
-    saveCurrentWorkout();
-    renderExercises();
-    
-    // Update button text
     const btnText = document.getElementById('toggleAllText');
     const btnIcon = document.querySelector('#toggleAllBtn i');
-    if (newState) {
+    
+    if (anyExpanded) {
+        // Collapse All - re-enable accordion mode
+        currentWorkout.exercises.forEach(exercise => {
+            exercise.collapsed = true;
+        });
+        currentWorkout.accordionMode = true;
         btnText.textContent = 'Expand All';
         btnIcon.className = 'bi bi-arrows-expand';
     } else {
+        // Expand All - disable accordion mode (allow multiple open)
+        currentWorkout.exercises.forEach(exercise => {
+            exercise.collapsed = false;
+        });
+        currentWorkout.accordionMode = false;
         btnText.textContent = 'Collapse All';
         btnIcon.className = 'bi bi-arrows-collapse';
     }
+    
+    saveCurrentWorkout();
+    renderExercises();
 }
 
 // Rendering
@@ -694,6 +720,10 @@ function loadCurrentWorkout() {
     const saved = localStorage.getItem('currentWorkout');
     if (saved) {
         currentWorkout = JSON.parse(saved);
+        // Default to accordion mode if property doesn't exist (backwards compatibility)
+        if (currentWorkout.accordionMode === undefined) {
+            currentWorkout.accordionMode = true;
+        }
     }
 }
 
