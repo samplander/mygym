@@ -230,8 +230,8 @@ function saveExercise() {
         name: name,
         collapsed: false,
         detailsHidden: false,
-        viewMode: 'planned',
-        selectedSetIndex: null,
+        timeMode: false,
+        showPrevious: false,
         sets: []
     };
     
@@ -315,34 +315,6 @@ function deleteSet(exerciseId, setIndex) {
     }
 }
 
-function selectSet(exerciseId, setIndex) {
-    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
-    if (!exercise) return;
-    
-    exercise.selectedSetIndex = setIndex;
-    saveCurrentWorkout();
-    renderExercises();
-}
-
-function updateValue(exerciseId, setIndex, type, field, change) {
-    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
-    if (!exercise || !exercise.sets[setIndex]) return;
-    
-    const currentValue = exercise.sets[setIndex][type][field];
-    let newValue = currentValue + change;
-    
-    // Prevent negative values
-    if (newValue < 0) newValue = 0;
-    
-    exercise.sets[setIndex][type][field] = newValue;
-    saveCurrentWorkout();
-    
-    // Update only this specific input
-    const inputId = `${type}-${field}-${exerciseId}-${setIndex}`;
-    const input = document.getElementById(inputId);
-    if (input) input.value = newValue;
-}
-
 function handleDirectInput(exerciseId, setIndex, type, field, value) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise || !exercise.sets[setIndex]) return;
@@ -388,6 +360,24 @@ function toggleExerciseDetails(exerciseId) {
     if (!exercise) return;
     
     exercise.detailsHidden = !exercise.detailsHidden;
+    saveCurrentWorkout();
+    renderExercises();
+}
+
+function toggleTimeMode(exerciseId) {
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+    
+    exercise.timeMode = !exercise.timeMode;
+    saveCurrentWorkout();
+    renderExercises();
+}
+
+function toggleShowPrevious(exerciseId) {
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+    
+    exercise.showPrevious = !exercise.showPrevious;
     saveCurrentWorkout();
     renderExercises();
 }
@@ -439,12 +429,18 @@ function renderExercises() {
     
     container.innerHTML = currentWorkout.exercises.map(exercise => `
         <div class="exercise-card">
-            <div class="exercise-header" onclick="event.target.closest('.exercise-header').querySelector('.delete-exercise-btn').contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-details-btn').contains(event.target) ? null : toggleExercise(${exercise.id})">
+            <div class="exercise-header" onclick="event.target.closest('.exercise-header').querySelector('.delete-exercise-btn').contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-details-btn').contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-time-btn').contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-previous-btn').contains(event.target) ? null : toggleExercise(${exercise.id})">
                 <div class="exercise-header-left">
                     <i class="bi bi-chevron-down chevron ${exercise.collapsed ? 'collapsed' : ''}"></i>
                     <h6>${exercise.name}</h6>
                 </div>
                 <div class="exercise-header-right">
+                    <button class="toggle-previous-btn" onclick="event.stopPropagation(); toggleShowPrevious(${exercise.id})" title="${exercise.showPrevious ? 'Hide' : 'Show'} previous values">
+                        <i class="bi bi-activity" style="opacity: ${exercise.showPrevious ? '1' : '0.5'}"></i>
+                    </button>
+                    <button class="toggle-time-btn" onclick="event.stopPropagation(); toggleTimeMode(${exercise.id})" title="${exercise.timeMode ? 'Switch to Reps' : 'Switch to Time'}">
+                        <i class="bi bi-${exercise.timeMode ? '123' : 'stopwatch'}"></i>
+                    </button>
                     <button class="toggle-details-btn" onclick="event.stopPropagation(); toggleExerciseDetails(${exercise.id})" title="${exercise.detailsHidden ? 'Show' : 'Hide'} details">
                         <i class="bi bi-${exercise.detailsHidden ? 'eye-slash' : 'eye'}"></i>
                     </button>
@@ -461,204 +457,100 @@ function renderExercises() {
             </div>
         </div>
     `).join('');
-    
-    // Initialize swipe detection after rendering
-    setTimeout(() => initializeSwipeDetection(), 100);
 }
 
 function renderSet(exerciseId, exercise) {
     if (!exercise.sets || exercise.sets.length === 0) {
         return '';
     }
-    
-    const selectedIndex = exercise.selectedSetIndex ?? 0;
-    const selectedSet = exercise.sets[selectedIndex];
-    const viewMode = exercise.viewMode || 'planned';
-    
-    return `
-        <!-- Horizontal Set Overview -->
-        <div class="sets-overview-container">
-            <div class="sets-overview">
-                ${exercise.sets.map((set, index) => `
-                    <div class="set-card ${index === selectedIndex ? 'selected' : ''}" 
-                         onclick="selectSet(${exerciseId}, ${index})">
-                        <div class="set-card-number">Set ${index + 1}</div>
-                        <div class="set-card-value">${set.planned.weight || 0} × ${set.planned.reps || 0}</div>
-                        ${set.actual.weight > 0 || set.actual.reps > 0 ? 
-                            `<div class="set-card-actual">✓ ${set.actual.weight} × ${set.actual.reps}</div>` : 
-                            '<div class="set-card-pending">—</div>'
-                        }
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-        
-        <!-- Current Set Details -->
-        <div class="current-set-details ${exercise.detailsHidden ? 'hidden' : ''}" 
-             id="set-details-${exerciseId}"
-             data-exercise-id="${exerciseId}">
-            <div class="current-set-header">
-                <span class="current-set-title">Set ${selectedIndex + 1} Details</span>
-                <button class="delete-set-btn" onclick="deleteSet(${exerciseId}, ${selectedIndex})">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            
-            <!-- View Mode Tabs -->
-            <div class="view-mode-tabs">
-                <button class="view-tab ${viewMode === 'planned' ? 'active' : ''}" 
-                        onclick="toggleViewMode(${exerciseId}, 'planned')">
-                    <i class="bi bi-clipboard-check"></i> Planned
-                </button>
-                <button class="view-tab ${viewMode === 'actual' ? 'active' : ''}" 
-                        onclick="toggleViewMode(${exerciseId}, 'actual')">
-                    <i class="bi bi-check-circle"></i> Actual
-                </button>
-            </div>
-            
-            <!-- View Indicators -->
-            <div class="view-indicators">
-                <span class="view-dot ${viewMode === 'planned' ? 'active' : ''}"></span>
-                <span class="view-dot ${viewMode === 'actual' ? 'active' : ''}"></span>
-            </div>
-            
-            <!-- Copy Button (shown in actual view) -->
-            ${viewMode === 'actual' ? `
-                <button class="copy-planned-btn" onclick="copyPlannedToActual(${exerciseId}, ${selectedIndex})">
-                    <i class="bi bi-arrow-left-right"></i> Copy Planned → Actual
-                </button>
-            ` : ''}
-            
-            <!-- Mobile Single Column View -->
-            <div class="set-values-mobile" data-view-mode="${viewMode}">
-                ${renderMobileValueColumn(exerciseId, selectedIndex, viewMode, selectedSet)}
-            </div>
-            
-            <!-- Desktop Two Column View -->
-            <div class="set-values-compact set-values-desktop">
-                ${renderCompactValueRow(exerciseId, selectedIndex, 'weight', 'Weight (lbs)', selectedSet, 5)}
-                ${renderCompactValueRow(exerciseId, selectedIndex, 'reps', 'Reps', selectedSet, 1)}
-                ${renderCompactValueRow(exerciseId, selectedIndex, 'time', 'Time (sec)', selectedSet, 5)}
-            </div>
-        </div>
-    `;
-}
 
-function renderMobileValueColumn(exerciseId, setIndex, viewMode, set) {
-    const type = viewMode; // 'planned' or 'actual'
-    return `
-        <div class="mobile-value-row">
-            <div class="mobile-value-label">Weight (lbs)</div>
-            <div class="mobile-value-controls">
-                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'weight', -5)">−</button>
-                <input type="number" 
-                       id="${type}-weight-${exerciseId}-${setIndex}"
-                       class="value-input-mobile" 
-                       value="${set[type].weight}"
-                       onchange="handleDirectInput(${exerciseId}, ${setIndex}, '${type}', 'weight', this.value)"
-                       inputmode="numeric">
-                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'weight', 5)">+</button>
-            </div>
-        </div>
-        <div class="mobile-value-row">
-            <div class="mobile-value-label">Reps</div>
-            <div class="mobile-value-controls">
-                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'reps', -1)">−</button>
-                <input type="number" 
-                       id="${type}-reps-${exerciseId}-${setIndex}"
-                       class="value-input-mobile" 
-                       value="${set[type].reps}"
-                       onchange="handleDirectInput(${exerciseId}, ${setIndex}, '${type}', 'reps', this.value)"
-                       inputmode="numeric">
-                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'reps', 1)">+</button>
-            </div>
-        </div>
-        <div class="mobile-value-row">
-            <div class="mobile-value-label">Time (sec)</div>
-            <div class="mobile-value-controls">
-                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'time', -5)">−</button>
-                <input type="number" 
-                       id="${type}-time-${exerciseId}-${setIndex}"
-                       class="value-input-mobile" 
-                       value="${set[type].time}"
-                       onchange="handleDirectInput(${exerciseId}, ${setIndex}, '${type}', 'time', this.value)"
-                       inputmode="numeric">
-                <button class="btn-control-mobile" onclick="updateValue(${exerciseId}, ${setIndex}, '${type}', 'time', 5)">+</button>
-            </div>
-        </div>
-    `;
-}
+    const isTimeMode = exercise.timeMode || false;
 
-function renderCompactValueRow(exerciseId, setIndex, field, label, set, increment) {
-    return `
-        <div class="value-row-compact">
-            <div class="value-label-compact">${label}</div>
-            <div class="value-group-horizontal">
-                <div class="value-section-compact">
-                    <span class="value-type-compact">P:</span>
-                    <div class="value-controls-compact">
-                        <button class="btn-control-compact" onclick="updateValue(${exerciseId}, ${setIndex}, 'planned', '${field}', -${increment})">−</button>
-                        <input type="number" 
-                               id="planned-${field}-${exerciseId}-${setIndex}"
-                               class="value-input-compact" 
-                               value="${set.planned[field]}"
-                               onchange="handleDirectInput(${exerciseId}, ${setIndex}, 'planned', '${field}', this.value)"
-                               inputmode="numeric">
-                        <button class="btn-control-compact" onclick="updateValue(${exerciseId}, ${setIndex}, 'planned', '${field}', ${increment})">+</button>
-                    </div>
-                </div>
-                <div class="value-section-compact">
-                    <span class="value-type-compact">A:</span>
-                    <div class="value-controls-compact">
-                        <button class="btn-control-compact" onclick="updateValue(${exerciseId}, ${setIndex}, 'actual', '${field}', -${increment})">−</button>
-                        <input type="number" 
-                               id="actual-${field}-${exerciseId}-${setIndex}"
-                               class="value-input-compact" 
-                               value="${set.actual[field]}"
-                               onchange="handleDirectInput(${exerciseId}, ${setIndex}, 'actual', '${field}', this.value)"
-                               inputmode="numeric">
-                        <button class="btn-control-compact" onclick="updateValue(${exerciseId}, ${setIndex}, 'actual', '${field}', ${increment})">+</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
+    return exercise.sets.map((set, index) => {
+        // Get previous set for reference
+        const previousSet = index > 0 ? exercise.sets[index - 1] : null;
+        let previousText = '---';
+        if (previousSet) {
+            if (isTimeMode) {
+                previousText = `${previousSet.actual.time || previousSet.planned.time || 0}s`;
+            } else {
+                const prevWeight = previousSet.actual.weight || previousSet.planned.weight || 0;
+                const prevReps = previousSet.actual.reps || previousSet.planned.reps || 0;
+                previousText = `${prevWeight}kg × ${prevReps}`;
+            }
+        }
 
-function renderValueRow(exerciseId, setIndex, field, label, set, increment) {
-    return `
-        <div class="value-row">
-            <div class="value-label">${label}</div>
-            <div class="value-group">
-                <div class="value-section">
-                    <span class="value-type">Planned</span>
-                    <div class="value-controls">
-                        <button class="btn-control" onclick="updateValue(${exerciseId}, ${setIndex}, 'planned', '${field}', -${increment})">−</button>
+        return `
+            <div class="set-row ${exercise.detailsHidden ? 'hidden' : ''}">
+                <div class="set-number-badge">#${index + 1}</div>
+                ${exercise.showPrevious ? `<div class="set-previous">${previousText}</div>` : ''}
+                
+                ${isTimeMode ? `
+                    <!-- Time Mode -->
+                    <div class="set-input-group">
+                        <label class="set-input-label">P</label>
                         <input type="number" 
-                               id="planned-${field}-${exerciseId}-${setIndex}"
-                               class="value-input" 
-                               value="${set.planned[field]}"
-                               onchange="handleDirectInput(${exerciseId}, ${setIndex}, 'planned', '${field}', this.value)"
+                               class="set-input" 
+                               value="${set.planned.time}"
+                               placeholder="0"
+                               onchange="handleDirectInput(${exerciseId}, ${index}, 'planned', 'time', this.value)"
                                inputmode="numeric">
-                        <button class="btn-control" onclick="updateValue(${exerciseId}, ${setIndex}, 'planned', '${field}', ${increment})">+</button>
+                        <span class="set-input-unit">s</span>
                     </div>
-                </div>
-                <div class="value-section">
-                    <span class="value-type">Actual</span>
-                    <div class="value-controls">
-                        <button class="btn-control" onclick="updateValue(${exerciseId}, ${setIndex}, 'actual', '${field}', -${increment})">−</button>
+                    <div class="set-input-group">
+                        <label class="set-input-label">A</label>
                         <input type="number" 
-                               id="actual-${field}-${exerciseId}-${setIndex}"
-                               class="value-input" 
-                               value="${set.actual[field]}"
-                               onchange="handleDirectInput(${exerciseId}, ${setIndex}, 'actual', '${field}', this.value)"
+                               class="set-input" 
+                               value="${set.actual.time}"
+                               placeholder="0"
+                               onchange="handleDirectInput(${exerciseId}, ${index}, 'actual', 'time', this.value)"
                                inputmode="numeric">
-                        <button class="btn-control" onclick="updateValue(${exerciseId}, ${setIndex}, 'actual', '${field}', ${increment})">+</button>
+                        <span class="set-input-unit">s</span>
                     </div>
-                </div>
+                ` : `
+                    <!-- Weight/Reps Mode -->
+                    <div class="set-input-group">
+                        <label class="set-input-label">P</label>
+                        <input type="number" 
+                               class="set-input" 
+                               value="${set.planned.weight}"
+                               placeholder="0"
+                               onchange="handleDirectInput(${exerciseId}, ${index}, 'planned', 'weight', this.value)"
+                               inputmode="numeric">
+                        <span class="set-input-unit">kg</span>
+                        <span class="set-input-separator">×</span>
+                        <input type="number" 
+                               class="set-input set-input-reps" 
+                               value="${set.planned.reps}"
+                               placeholder="0"
+                               onchange="handleDirectInput(${exerciseId}, ${index}, 'planned', 'reps', this.value)"
+                               inputmode="numeric">
+                    </div>
+                    <div class="set-input-group">
+                        <label class="set-input-label">A</label>
+                        <input type="number" 
+                               class="set-input" 
+                               value="${set.actual.weight}"
+                               placeholder="0"
+                               onchange="handleDirectInput(${exerciseId}, ${index}, 'actual', 'weight', this.value)"
+                               inputmode="numeric">
+                        <span class="set-input-unit">kg</span>
+                        <span class="set-input-separator">×</span>
+                        <input type="number" 
+                               class="set-input set-input-reps" 
+                               value="${set.actual.reps}"
+                               placeholder="0"
+                               onchange="handleDirectInput(${exerciseId}, ${index}, 'actual', 'reps', this.value)"
+                               inputmode="numeric">
+                    </div>
+                `}
+                
+                <button class="set-delete-btn" onclick="deleteSet(${exerciseId}, ${index})" title="Delete set">
+                    <i class="bi bi-trash"></i>
+                </button>
             </div>
-        </div>
-    `;
+        `;
+    }).join('');
 }
 
 // Timer
@@ -689,79 +581,6 @@ function stopTimer() {
 
 function pad(num) {
     return num.toString().padStart(2, '0');
-}
-
-// View Mode Toggle & Swipe Detection
-function toggleViewMode(exerciseId, mode) {
-    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
-    if (!exercise) return;
-    
-    exercise.viewMode = mode || (exercise.viewMode === 'planned' ? 'actual' : 'planned');
-    saveCurrentWorkout();
-    renderExercises();
-}
-
-function copyPlannedToActual(exerciseId, setIndex) {
-    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
-    if (!exercise || !exercise.sets[setIndex]) return;
-    
-    const set = exercise.sets[setIndex];
-    set.actual.weight = set.planned.weight;
-    set.actual.reps = set.planned.reps;
-    set.actual.time = set.planned.time;
-    
-    saveCurrentWorkout();
-    renderExercises();
-}
-
-// Initialize swipe detection when exercises are rendered
-function initializeSwipeDetection() {
-    const setDetails = document.querySelectorAll('.current-set-details');
-    
-    setDetails.forEach(detail => {
-        let touchStartX = 0;
-        let touchEndX = 0;
-        const exerciseId = parseInt(detail.dataset.exerciseId);
-        
-        detail.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-        }, { passive: true });
-        
-        detail.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe(exerciseId, touchStartX, touchEndX);
-        }, { passive: true });
-    });
-}
-
-function handleSwipe(exerciseId, startX, endX) {
-    const swipeThreshold = 50;
-    const swipeDistance = endX - startX;
-    
-    if (Math.abs(swipeDistance) < swipeThreshold) return;
-    
-    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
-    if (!exercise) return;
-    
-    if (swipeDistance > 0) {
-        // Swipe right - go to Planned
-        if (exercise.viewMode === 'actual') {
-            toggleViewMode(exerciseId, 'planned');
-            vibrateDevice(10);
-        }
-    } else {
-        // Swipe left - go to Actual
-        if (exercise.viewMode === 'planned') {
-            toggleViewMode(exerciseId, 'actual');
-            vibrateDevice(10);
-        }
-    }
-}
-
-function vibrateDevice(duration) {
-    if ('vibrate' in navigator) {
-        navigator.vibrate(duration);
-    }
 }
 
 // LocalStorage

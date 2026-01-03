@@ -411,7 +411,7 @@ body {
 }
 
 .exercise-body {
-    padding: 12px;
+    padding: 8px;
     max-height: 5000px;
     overflow: hidden;
     transition: max-height 0.3s ease, padding 0.3s ease;
@@ -419,7 +419,7 @@ body {
 
 .exercise-body.collapsed {
     max-height: 0;
-    padding: 0 12px;
+    padding: 0 8px;
 }
 
 /* Horizontal Sets Overview */
@@ -572,53 +572,178 @@ body {
     cursor: pointer;
 }
 
-/* Compact Value Layout */
-.set-values-compact {
+/* Compact Value Layout - SIMPLIFIED SET ROW */
+.set-row {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.value-row-compact {
+    align-items: center;
+    gap: 6px;
     background: var(--light-bg);
-    padding: 8px;
+    padding: 6px 8px;
     border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 13px;
 }
 
-.value-label-compact {
-    font-size: 12px;
-    font-weight: 600;
+.set-row.hidden {
+    display: none;
+}
+
+.set-number-badge {
+    color: #667eea;
+    font-weight: 700;
+    font-size: 13px;
+    min-width: 24px;
+    flex-shrink: 0;
+}
+
+.set-previous {
+    font-size: 11px;
     color: #6c757d;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 60px;
 }
 
-.value-group-horizontal {
+.set-input-group {
     display: flex;
-    gap: 12px;
     align-items: center;
-}
-
-.value-section-compact {
+    gap: 3px;
     flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
-.value-type-compact {
+.set-input-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #495057;
+    min-width: 12px;
+}
+
+.set-input {
+    width: 50px;
+    height: 28px;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    padding: 2px;
+    font-size: 14px;
+    font-weight: 600;
+    background: white;
+}
+
+.set-input-reps {
+    width: 40px;
+}
+
+.set-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.set-input-unit {
+    font-size: 10px;
+    color: #6c757d;
+    font-weight: 500;
+    margin-right: 2px;
+}
+
+.set-input-separator {
     font-size: 13px;
     color: #6c757d;
     font-weight: 600;
-    min-width: 18px;
+    margin: 0 1px;
 }
 
-.value-controls-compact {
+.set-delete-btn {
+    background: transparent;
+    border: none;
+    color: #dc3545;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: 4px;
-    flex: 1;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.set-delete-btn:hover {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.set-delete-btn:active {
+    transform: scale(0.95);
+}
+
+/* Time Mode Toggle Button */
+.toggle-time-btn,
+.toggle-previous-btn {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 16px;
+}
+
+.toggle-time-btn:hover,
+.toggle-previous-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.toggle-time-btn:active,
+.toggle-previous-btn:active {
+    transform: scale(0.95);
+}
+
+/* Mobile responsiveness for set rows */
+@media (max-width: 400px) {
+    .set-row {
+        font-size: 12px;
+        gap: 4px;
+        padding: 4px 6px;
+    }
+    
+    .set-number-badge {
+        min-width: 20px;
+        font-size: 12px;
+    }
+    
+    .set-previous {
+        font-size: 10px;
+        min-width: 50px;
+    }
+    
+    .set-input {
+        width: 46px;
+        height: 26px;
+        font-size: 13px;
+        padding: 1px;
+    }
+    
+    .set-input-reps {
+        width: 36px;
+    }
+    
+    .set-input-unit {
+        font-size: 9px;
+    }
+    
+    .set-delete-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+    }
 }
 
 /* Mobile-Optimized Set Layout - Stacked Vertically */
@@ -675,66 +800,6 @@ body {
     align-items: center;
     gap: 4px;
 }
-
-/* Control Buttons - Large Touch Targets */
-.btn-control {
-    width: var(--touch-target);
-    height: var(--touch-target);
-    border-radius: 8px;
-    border: none;
-    background: var(--primary-color);
-    color: white;
-    font-size: 20px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-control:active {
-    background: #0a58ca;
-    transform: scale(0.95);
-}
-
-/* Compact Control Buttons */
-.btn-control-compact {
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
-    border: none;
-    background: var(--primary-color);
-    color: white;
-    font-size: 18px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.2s;
-    flex-shrink: 0;
-}
-
-.btn-control-compact:active {
-    background: #0a58ca;
-    transform: scale(0.95);
-}
-
-.value-input {
-    flex: 1;
-    text-align: center;
-    border: 2px solid var(--border-color);
-    border-radius: 6px;
-    padding: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    min-width: 60px;
-}
-
-.value-input:focus {
-    outline: none;
- 
 
 /* Workout Detail Modal */
 .workout-detail-meta {
@@ -1053,219 +1118,6 @@ input[type="number"] {
 /* ========================================
    ENHANCED WORKOUT DETAIL VIEW STYLES
    ======================================== */
-
-/* View Mode Tabs */
-.view-mode-tabs {
-    display: none; /* Hidden on desktop, shown on mobile */
-    gap: 8px;
-    margin: 12px 0;
-}
-
-.view-tab {
-    flex: 1;
-    padding: 10px 16px;
-    background: white;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #6c757d;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.view-tab:active {
-    transform: scale(0.98);
-}
-
-.view-tab.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-color: #667eea;
-    color: white;
-}
-
-.view-tab i {
-    font-size: 16px;
-}
-
-/* View Indicators (Dots) */
-.view-indicators {
-    display: none; /* Hidden on desktop, shown on mobile */
-    justify-content: center;
-    gap: 6px;
-    margin: 8px 0;
-}
-
-.view-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #dee2e6;
-    transition: all 0.3s ease;
-}
-
-.view-dot.active {
-    background: #667eea;
-    width: 24px;
-    border-radius: 4px;
-}
-
-/* Copy Planned Button */
-.copy-planned-btn {
-    width: 100%;
-    padding: 10px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    border: 2px dashed #667eea;
-    border-radius: 8px;
-    color: #667eea;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    margin: 12px 0;
-    display: none; /* Hidden on desktop, shown on mobile */
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: all 0.3s ease;
-}
-
-.copy-planned-btn:active {
-    transform: scale(0.98);
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-}
-
-.copy-planned-btn i {
-    font-size: 16px;
-}
-
-/* Mobile Single Column View */
-.set-values-mobile {
-    display: none; /* Hidden on desktop */
-    flex-direction: column;
-    gap: 12px;
-}
-
-.mobile-value-row {
-    background: var(--light-bg);
-    padding: 12px;
-    border-radius: 8px;
-}
-
-.mobile-value-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #6c757d;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.mobile-value-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-control-mobile {
-    width: 44px;
-    height: 44px;
-    border: 2px solid var(--border-color);
-    background: white;
-    border-radius: 8px;
-    font-size: 20px;
-    font-weight: 600;
-    color: #495057;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-
-.btn-control-mobile:active {
-    transform: scale(0.95);
-    background: var(--light-bg);
-    border-color: var(--primary-color);
-}
-
-.value-input-mobile {
-    flex: 1;
-    text-align: center;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 20px;
-    font-weight: 600;
-    min-width: 0;
-    background: white;
-}
-
-.value-input-mobile:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
-
-/* Desktop Two Column View */
-.set-values-desktop {
-    display: flex; /* Shown on desktop */
-}
-
-/* Mobile Responsive Styles */
-@media (max-width: 575px) {
-    /* Show mobile elements */
-    .view-mode-tabs {
-        display: flex;
-    }
-    
-    .view-indicators {
-        display: flex;
-    }
-    
-    .copy-planned-btn {
-        display: flex;
-    }
-    
-    .set-values-mobile {
-        display: flex;
-    }
-    
-    /* Hide desktop elements */
-    .set-values-desktop {
-        display: none !important;
-    }
-    
-    /* Add swipe hint */
-    .current-set-details::after {
-        content: '← Swipe to switch →';
-        display: block;
-        text-align: center;
-        font-size: 12px;
-        color: #adb5bd;
-        margin-top: 12px;
-        font-style: italic;
-    }
-    
-    /* Smooth transition for view changes */
-    .set-values-mobile {
-        animation: slideIn 0.3s ease;
-    }
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
 
 /* ========================================
    ENHANCED WORKOUT DETAIL VIEW STYLES
