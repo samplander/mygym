@@ -1074,6 +1074,74 @@ body {
     opacity: 0.3;
 }
 
+/* Exercise History Modal Styles */
+.exercise-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.history-session {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #dee2e6;
+}
+
+.history-session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.history-date {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 15px;
+}
+
+.history-meta {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.history-sets {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.history-set {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.history-set-number {
+    font-weight: 600;
+    color: #764ba2;
+    font-size: 14px;
+    min-width: 28px;
+}
+
+.history-set-value {
+    font-size: 14px;
+    color: #212529;
+    font-weight: 500;
+}
+
+.history-set-value .text-muted {
+    color: #6c757d;
+    font-style: italic;
+}
+
 /* Buttons */
 .btn-lg {
     min-height: 52px;

@@ -444,6 +444,9 @@ function renderExercises() {
                     <button class="toggle-details-btn" onclick="event.stopPropagation(); toggleExerciseDetails(${exercise.id})" title="${exercise.detailsHidden ? 'Show' : 'Hide'} details">
                         <i class="bi bi-${exercise.detailsHidden ? 'eye-slash' : 'eye'}"></i>
                     </button>
+                    <button class="exercise-history-btn" onclick="event.stopPropagation(); showExerciseHistory('${exercise.name.replace(/'/g, "\\'")}')", title="View exercise history">
+                        <i class="bi bi-clock-history"></i>
+                    </button>
                     <button class="delete-exercise-btn" onclick="event.stopPropagation(); deleteExercise(${exercise.id})">
                         <i class="bi bi-trash"></i>
                     </button>
@@ -897,6 +900,116 @@ function calculateExerciseStats(exercise) {
         allCompleted,
         summary: `${completedSets}/${exercise.sets.length} sets • ${avgWeight}lbs × ${avgReps} avg • ${formatVolume(totalVolume)}`
     };
+}
+
+// Exercise History Functions
+function getExerciseHistory(exerciseName) {
+    const history = JSON.parse(localStorage.getItem('workoutHistory')) || [];
+    const exerciseHistory = [];
+    
+    // Filter workouts that contain this exercise and extract sets
+    history.forEach(workout => {
+        const exercise = workout.exercises.find(ex => ex.name === exerciseName);
+        if (exercise && exercise.sets.length > 0) {
+            exerciseHistory.push({
+                workoutDate: new Date(workout.completedAt),
+                completedAt: workout.completedAt,
+                duration: workout.duration,
+                sets: exercise.sets.map(set => ({
+                    actual: { ...set.actual }
+                })),
+                timeMode: exercise.timeMode || false
+            });
+        }
+    });
+    
+    // Sort chronologically (oldest to newest)
+    exerciseHistory.sort((a, b) => a.workoutDate - b.workoutDate);
+    
+    return exerciseHistory;
+}
+
+function showExerciseHistory(exerciseName) {
+    const history = getExerciseHistory(exerciseName);
+    const modal = new bootstrap.Modal(document.getElementById('exerciseHistoryModal'));
+    const titleEl = document.getElementById('exerciseHistoryTitle');
+    const bodyEl = document.getElementById('exerciseHistoryBody');
+    
+    titleEl.textContent = exerciseName;
+    
+    if (history.length === 0) {
+        bodyEl.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-clock-history"></i>
+                <p>No history for this exercise yet.<br>Complete a workout to see your progress!</p>
+            </div>
+        `;
+        modal.show();
+        return;
+    }
+    
+    // Render history grouped by workout session
+    let html = '<div class="exercise-history-list">';
+    
+    history.forEach((session, index) => {
+        const date = new Date(session.completedAt);
+        const isToday = date.toDateString() === new Date().toDateString();
+        const isYesterday = date.toDateString() === new Date(Date.now() - 86400000).toDateString();
+        
+        let dateLabel;
+        if (isToday) {
+            dateLabel = 'Today';
+        } else if (isYesterday) {
+            dateLabel = 'Yesterday';
+        } else {
+            dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        
+        html += `
+            <div class="history-session">
+                <div class="history-session-header">
+                    <span class="history-date">${dateLabel}</span>
+                    <span class="history-meta">${session.sets.length} set${session.sets.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div class="history-sets">
+        `;
+        
+        session.sets.forEach((set, setIndex) => {
+            let setDisplay;
+            if (session.timeMode) {
+                // Time-based exercise
+                const minutes = Math.floor(set.actual.time / 60);
+                const seconds = set.actual.time % 60;
+                setDisplay = minutes > 0 
+                    ? `${minutes}m ${seconds}s`
+                    : `${seconds}s`;
+            } else {
+                // Weight/reps exercise
+                if (set.actual.weight > 0 || set.actual.reps > 0) {
+                    setDisplay = `${set.actual.weight}kg × ${set.actual.reps}`;
+                } else {
+                    setDisplay = '<span class="text-muted">Not completed</span>';
+                }
+            }
+            
+            html += `
+                <div class="history-set">
+                    <span class="history-set-number">#${setIndex + 1}</span>
+                    <span class="history-set-value">${setDisplay}</span>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    bodyEl.innerHTML = html;
+    modal.show();
 }
 
 function getSetStatus(set) {
