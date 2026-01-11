@@ -113,6 +113,7 @@ function showWorkoutScreen() {
     document.getElementById('settingsScreen').classList.add('d-none');
     renderExercises();
     startTimer();
+    restoreUIState();
 }
 
 function showHistoryScreen() {
@@ -276,12 +277,13 @@ function addSet(exerciseId) {
     
     // Get previous set values or use defaults
     const previousSet = exercise.sets[exercise.sets.length - 1];
-    const defaultValues = previousSet ? { ...previousSet.planned } : { weight: 0, reps: 0, time: 0 };
+    const defaultValues = previousSet ? { ...previousSet.actual } : { weight: 0, reps: 0, time: 0 };
     
     const newSet = {
         collapsed: false,
+        completed: false,
         planned: { ...defaultValues },
-        actual: { weight: 0, reps: 0, time: 0 }
+        actual: { ...defaultValues }
     };
     
     exercise.sets.push(newSet);
@@ -315,15 +317,29 @@ function deleteSet(exerciseId, setIndex) {
     }
 }
 
-function handleDirectInput(exerciseId, setIndex, type, field, value) {
+function handleDirectInput(exerciseId, setIndex, field, value) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise || !exercise.sets[setIndex]) return;
+    
+    // Prevent editing locked/completed sets
+    if (exercise.sets[setIndex].completed) return;
     
     let numValue = parseInt(value) || 0;
     if (numValue < 0) numValue = 0;
     
-    exercise.sets[setIndex][type][field] = numValue;
+    // Update both actual and planned to keep data consistent
+    exercise.sets[setIndex].actual[field] = numValue;
+    exercise.sets[setIndex].planned[field] = numValue;
     saveCurrentWorkout();
+}
+
+function toggleSetCompletion(exerciseId, setIndex) {
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise || !exercise.sets[setIndex]) return;
+    
+    exercise.sets[setIndex].completed = !exercise.sets[setIndex].completed;
+    saveCurrentWorkout();
+    renderExercises();
 }
 
 // Collapse Management
@@ -413,6 +429,47 @@ function toggleAllExercises() {
     renderExercises();
 }
 
+// Workout UI Toggle (Header/Footer Hide/Show)
+let isUIHidden = false;
+
+function toggleWorkoutUI() {
+    isUIHidden = !isUIHidden;
+    
+    const header = document.querySelector('#workoutScreen .sticky-header');
+    const bottomNav = document.querySelector('#workoutScreen .bottom-nav');
+    const content = document.querySelector('#workoutScreen .workout-content');
+    const toggleBtn = document.getElementById('toggleUIBtn');
+    const toggleIcon = toggleBtn.querySelector('i');
+    
+    if (isUIHidden) {
+        // Hide header and footer
+        header.classList.add('hidden');
+        bottomNav.classList.add('hidden');
+        content.classList.add('fullscreen');
+        toggleBtn.classList.add('fullscreen');
+        toggleIcon.className = 'bi bi-eye';
+    } else {
+        // Show header and footer
+        header.classList.remove('hidden');
+        bottomNav.classList.remove('hidden');
+        content.classList.remove('fullscreen');
+        toggleBtn.classList.remove('fullscreen');
+        toggleIcon.className = 'bi bi-eye-slash';
+    }
+    
+    // Save state to localStorage
+    localStorage.setItem('workoutUIHidden', isUIHidden);
+}
+
+function restoreUIState() {
+    const savedState = localStorage.getItem('workoutUIHidden');
+    if (savedState === 'true' && !isUIHidden) {
+        toggleWorkoutUI();
+    } else if (savedState === 'false' && isUIHidden) {
+        toggleWorkoutUI();
+    }
+}
+
 // Rendering
 function renderExercises() {
     const container = document.getElementById('exercisesList');
@@ -475,67 +532,47 @@ function renderSet(exerciseId, exercise) {
         let previousText = '---';
         if (previousSet) {
             if (isTimeMode) {
-                previousText = `${previousSet.actual.time || previousSet.planned.time || 0}s`;
+                previousText = `${previousSet.actual.time || 0}s`;
             } else {
-                const prevWeight = previousSet.actual.weight || previousSet.planned.weight || 0;
-                const prevReps = previousSet.actual.reps || previousSet.planned.reps || 0;
+                const prevWeight = previousSet.actual.weight || 0;
+                const prevReps = previousSet.actual.reps || 0;
                 previousText = `${prevWeight}kg × ${prevReps}`;
             }
         }
 
         return `
-            <div class="set-row ${exercise.detailsHidden ? 'hidden' : ''}">
+            <div class="set-row ${exercise.detailsHidden ? 'hidden' : ''} ${set.completed ? 'set-completed' : ''}">
                 <div class="set-number-badge">#${index + 1}</div>
                 ${exercise.showPrevious ? `<div class="set-previous">${previousText}</div>` : ''}
+                
+                <!-- Completion Toggle Button (Left side for easy thumb reach) -->
+                <button class="set-complete-btn ${set.completed ? 'completed' : ''}" 
+                        onclick="toggleSetCompletion(${exerciseId}, ${index})"
+                        title="${set.completed ? 'Mark incomplete' : 'Mark complete'}">
+                    <i class="bi bi-${set.completed ? 'check-circle-fill' : 'circle'}"></i>
+                </button>
                 
                 ${isTimeMode ? `
                     <!-- Time Mode -->
                     <div class="set-input-group">
-                        <label class="set-input-label">P</label>
-                        <input type="number" 
-                               class="set-input" 
-                               value="${set.planned.time}"
-                               placeholder="0"
-                               onchange="handleDirectInput(${exerciseId}, ${index}, 'planned', 'time', this.value)"
-                               inputmode="numeric">
-                        <span class="set-input-unit">s</span>
-                    </div>
-                    <div class="set-input-group">
-                        <label class="set-input-label">A</label>
                         <input type="number" 
                                class="set-input" 
                                value="${set.actual.time}"
                                placeholder="0"
-                               onchange="handleDirectInput(${exerciseId}, ${index}, 'actual', 'time', this.value)"
+                               ${set.completed ? 'disabled' : ''}
+                               onchange="handleDirectInput(${exerciseId}, ${index}, 'time', this.value)"
                                inputmode="numeric">
                         <span class="set-input-unit">s</span>
                     </div>
                 ` : `
                     <!-- Weight/Reps Mode -->
                     <div class="set-input-group">
-                        <label class="set-input-label">P</label>
-                        <input type="number" 
-                               class="set-input" 
-                               value="${set.planned.weight}"
-                               placeholder="0"
-                               onchange="handleDirectInput(${exerciseId}, ${index}, 'planned', 'weight', this.value)"
-                               inputmode="numeric">
-                        <span class="set-input-unit">kg</span>
-                        <span class="set-input-separator">×</span>
-                        <input type="number" 
-                               class="set-input set-input-reps" 
-                               value="${set.planned.reps}"
-                               placeholder="0"
-                               onchange="handleDirectInput(${exerciseId}, ${index}, 'planned', 'reps', this.value)"
-                               inputmode="numeric">
-                    </div>
-                    <div class="set-input-group">
-                        <label class="set-input-label">A</label>
                         <input type="number" 
                                class="set-input" 
                                value="${set.actual.weight}"
                                placeholder="0"
-                               onchange="handleDirectInput(${exerciseId}, ${index}, 'actual', 'weight', this.value)"
+                               ${set.completed ? 'disabled' : ''}
+                               onchange="handleDirectInput(${exerciseId}, ${index}, 'weight', this.value)"
                                inputmode="numeric">
                         <span class="set-input-unit">kg</span>
                         <span class="set-input-separator">×</span>
@@ -543,7 +580,8 @@ function renderSet(exerciseId, exercise) {
                                class="set-input set-input-reps" 
                                value="${set.actual.reps}"
                                placeholder="0"
-                               onchange="handleDirectInput(${exerciseId}, ${index}, 'actual', 'reps', this.value)"
+                               ${set.completed ? 'disabled' : ''}
+                               onchange="handleDirectInput(${exerciseId}, ${index}, 'reps', this.value)"
                                inputmode="numeric">
                     </div>
                 `}
@@ -750,34 +788,25 @@ function viewWorkoutDetail(workoutId) {
                         <div class="detail-sets-table">
                             <div class="sets-table-header">
                                 <div class="set-col-number">Set</div>
-                                <div class="set-col-planned">Planned</div>
-                                <div class="set-col-actual">Actual</div>
+                                <div class="set-col-actual">Values</div>
                                 <div class="set-col-status">Status</div>
                             </div>
                             ${exercise.sets.map((set, index) => {
-                                const setStatus = getSetStatus(set);
+                                // Backward compatibility: check completed property first, fallback to value-based check
+                                const completed = set.completed !== undefined ? set.completed : (set.actual.weight > 0 || set.actual.reps > 0 || set.actual.time > 0);
                                 return `
-                                <div class="sets-table-row ${setStatus.class}">
+                                <div class="sets-table-row ${completed ? 'set-completed' : 'set-missed'}">
                                     <div class="set-col-number">${index + 1}</div>
-                                    <div class="set-col-planned">
-                                        ${set.planned.weight}lbs × ${set.planned.reps}
-                                        ${set.planned.time > 0 ? `<span class="set-time">${set.planned.time}s</span>` : ''}
-                                    </div>
                                     <div class="set-col-actual">
                                         ${set.actual.weight}lbs × ${set.actual.reps}
                                         ${set.actual.time > 0 ? `<span class="set-time">${set.actual.time}s</span>` : ''}
                                     </div>
                                     <div class="set-col-status">
-                                        <span class="status-icon" title="${setStatus.title}">
-                                            <i class="bi bi-${setStatus.icon}"></i> ${setStatus.arrow}
+                                        <span class="status-icon" title="${completed ? 'Completed' : 'Not completed'}">
+                                            <i class="bi bi-${completed ? 'check-circle-fill' : 'x-circle-fill'}"></i>
                                         </span>
                                     </div>
                                 </div>
-                                ${setStatus.completed ? `
-                                    <div class="set-progress-bar">
-                                        <div class="set-progress-fill" style="width: ${setStatus.percentage}%"></div>
-                                    </div>
-                                ` : ''}
                                 `;
                             }).join('')}
                         </div>
@@ -808,7 +837,6 @@ function calculateWorkoutStats(workout) {
     let totalSets = 0;
     let completedSets = 0;
     let totalVolume = 0;
-    let plannedVolume = 0;
     let heaviestSet = { weight: 0, exercise: '', reps: 0 };
     let mostVolumeExercise = { name: '', volume: 0 };
     let perfectExercises = [];
@@ -820,13 +848,13 @@ function calculateWorkoutStats(workout) {
         exercise.sets.forEach(set => {
             totalSets++;
             const actualVol = set.actual.weight * set.actual.reps;
-            const plannedVol = set.planned.weight * set.planned.reps;
             
             totalVolume += actualVol;
-            plannedVolume += plannedVol;
             exerciseVolume += actualVol;
             
-            if (set.actual.weight > 0 || set.actual.reps > 0) {
+            // Backward compatibility: check completed property first, fallback to value-based check
+            const isCompleted = set.completed !== undefined ? set.completed : (set.actual.weight > 0 || set.actual.reps > 0);
+            if (isCompleted) {
                 completedSets++;
             } else {
                 exercisePerfect = false;
@@ -865,7 +893,7 @@ function calculateWorkoutStats(workout) {
     if (perfectExercises.length > 0) {
         highlights.push({
             icon: '⭐',
-            text: `All Targets Hit: ${perfectExercises[0]}${perfectExercises.length > 1 ? ` +${perfectExercises.length - 1} more` : ''}`
+            text: `All Sets Completed: ${perfectExercises[0]}${perfectExercises.length > 1 ? ` +${perfectExercises.length - 1} more` : ''}`
         });
     }
     
@@ -874,7 +902,6 @@ function calculateWorkoutStats(workout) {
         completedSets,
         completionRate,
         totalVolume,
-        plannedVolume,
         highlights
     };
 }
@@ -1013,50 +1040,18 @@ function showExerciseHistory(exerciseName) {
 }
 
 function getSetStatus(set) {
+    // Simplified: just check if completed (removed planned comparison)
     const actualVol = set.actual.weight * set.actual.reps;
-    const plannedVol = set.planned.weight * set.planned.reps;
+    const completed = actualVol > 0 || set.actual.time > 0;
     
-    if (actualVol === 0) {
-        return { 
-            class: 'set-missed', 
-            icon: 'x-circle-fill', 
-            arrow: '', 
-            title: 'Not completed',
-            completed: false,
-            percentage: 0
-        };
-    }
-    
-    const percentage = plannedVol > 0 ? Math.round((actualVol / plannedVol) * 100) : 100;
-    
-    if (actualVol > plannedVol) {
-        return { 
-            class: 'set-exceeded', 
-            icon: 'check-circle-fill', 
-            arrow: '↑', 
-            title: 'Exceeded target',
-            completed: true,
-            percentage: Math.min(percentage, 150)
-        };
-    } else if (actualVol === plannedVol) {
-        return { 
-            class: 'set-matched', 
-            icon: 'check-circle-fill', 
-            arrow: '→', 
-            title: 'Target hit',
-            completed: true,
-            percentage: 100
-        };
-    } else {
-        return { 
-            class: 'set-partial', 
-            icon: 'exclamation-circle-fill', 
-            arrow: '↓', 
-            title: 'Below target',
-            completed: true,
-            percentage
-        };
-    }
+    return { 
+        class: completed ? 'set-completed' : 'set-missed', 
+        icon: completed ? 'check-circle-fill' : 'x-circle-fill',
+        arrow: '', 
+        title: completed ? 'Completed' : 'Not completed',
+        completed: completed,
+        percentage: completed ? 100 : 0
+    };
 }
 
 function formatVolume(volume) {
@@ -1119,12 +1114,11 @@ function useAsTemplate(workoutId) {
             name: exercise.name,
             collapsed: false,
             detailsHidden: false,
-            viewMode: 'planned',
             selectedSetIndex: 0,
             sets: exercise.sets.map(set => ({
                 collapsed: false,
-                planned: { ...set.actual }, // Use previous actual as new planned
-                actual: { weight: 0, reps: 0, time: 0 }
+                planned: { ...set.actual },
+                actual: { ...set.actual }
             }))
         }))
     };

@@ -220,6 +220,14 @@ body {
     border-radius: 20px;
     border: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.3s ease;
+}
+
+.sticky-header.hidden {
+    transform: translateY(-120%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .btn-back {
@@ -246,6 +254,49 @@ body {
 /* Workout Content */
 .workout-content {
     padding: 12px 12px 80px 12px;
+    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.workout-content.fullscreen {
+    padding-bottom: 12px !important;
+}
+
+/* Toggle UI Button - Floating Bottom-Right */
+.toggle-ui-btn {
+    display: none; /* Hidden by default */
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(102, 126, 234, 0.9);
+    border: none;
+    color: white;
+    font-size: 20px;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    z-index: 999;
+    transition: all 0.3s ease;
+}
+
+#workoutScreen .toggle-ui-btn {
+    display: flex; /* Only show on workout screen */
+}
+
+.toggle-ui-btn.fullscreen {
+    bottom: 20px;
+}
+
+.toggle-ui-btn:active {
+    transform: scale(0.95);
+}
+
+.toggle-ui-btn:hover {
+    background: rgba(102, 126, 234, 1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* History Content */
@@ -654,6 +705,52 @@ body {
     margin: 0 1px;
 }
 
+/* Set Completion Toggle Button */
+.set-complete-btn {
+    background: transparent;
+    border: 2px solid #dee2e6;
+    color: #dee2e6;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.set-complete-btn.completed {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.set-complete-btn:hover {
+    transform: scale(1.05);
+}
+
+.set-complete-btn:active {
+    transform: scale(0.95);
+}
+
+/* Completed Set Row */
+.set-row.set-completed {
+    background: rgba(40, 167, 69, 0.08);
+    opacity: 0.85;
+}
+
+/* Locked/Disabled Inputs */
+.set-input:disabled {
+    background: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 .set-delete-btn {
     background: transparent;
     border: none;
@@ -940,6 +1037,14 @@ body {
     padding-bottom: 6px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
     z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.3s ease;
+}
+
+.bottom-nav.hidden {
+    transform: translateY(120%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .nav-item {
