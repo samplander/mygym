@@ -153,6 +153,7 @@ function completeWorkout() {
     if (confirm('Complete this workout?')) {
         // Calculate metadata
         currentWorkout.endTime = new Date().toISOString();
+        currentWorkout.completedAt = new Date().toISOString(); // Add this line
         const startTime = new Date(currentWorkout.startTime).getTime();
         const endTime = new Date(currentWorkout.endTime).getTime();
         currentWorkout.duration = Math.floor((endTime - startTime) / 1000); // in seconds
@@ -498,11 +499,11 @@ function renderExercises() {
                     <button class="toggle-time-btn" onclick="event.stopPropagation(); toggleTimeMode(${exercise.id})" title="${exercise.timeMode ? 'Switch to Reps' : 'Switch to Time'}">
                         <i class="bi bi-${exercise.timeMode ? '123' : 'stopwatch'}"></i>
                     </button>
+                    <button class="exercise-history-btn" onclick="event.stopPropagation(); showExerciseHistory('${exercise.name.replace(/'/g, "\\'")}')", title="View exercise history">
+                        <i class="bi bi-graph-up"></i>
+                    </button>
                     <button class="toggle-details-btn" onclick="event.stopPropagation(); toggleExerciseDetails(${exercise.id})" title="${exercise.detailsHidden ? 'Show' : 'Hide'} details">
                         <i class="bi bi-${exercise.detailsHidden ? 'eye-slash' : 'eye'}"></i>
-                    </button>
-                    <button class="exercise-history-btn" onclick="event.stopPropagation(); showExerciseHistory('${exercise.name.replace(/'/g, "\\'")}')", title="View exercise history">
-                        <i class="bi bi-clock-history"></i>
                     </button>
                     <button class="delete-exercise-btn" onclick="event.stopPropagation(); deleteExercise(${exercise.id})">
                         <i class="bi bi-trash"></i>
@@ -648,7 +649,7 @@ function renderHistory() {
     if (history.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <i class="bi bi-clock-history"></i>
+                <i class="bi bi-graph-up"></i>
                 <p>No Workouts Yet</p>
                 <p class="text-muted">Complete your first workout<br>to see it here!</p>
                 <button class="btn btn-primary mt-3" onclick="showHomeScreen()">
@@ -967,7 +968,7 @@ function showExerciseHistory(exerciseName) {
     if (history.length === 0) {
         bodyEl.innerHTML = `
             <div class="empty-state">
-                <i class="bi bi-clock-history"></i>
+                <i class="bi bi-graph-up"></i>
                 <p>No history for this exercise yet.<br>Complete a workout to see your progress!</p>
             </div>
         `;

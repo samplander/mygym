@@ -777,7 +777,8 @@ body {
 
 /* Time Mode Toggle Button */
 .toggle-time-btn,
-.toggle-previous-btn {
+.toggle-previous-btn,
+.exercise-history-btn {
     background: transparent;
     border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
@@ -793,13 +794,15 @@ body {
 }
 
 .toggle-time-btn:hover,
-.toggle-previous-btn:hover {
+.toggle-previous-btn:hover,
+.exercise-history-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.5);
 }
 
 .toggle-time-btn:active,
-.toggle-previous-btn:active {
+.toggle-previous-btn:active,
+.exercise-history-btn:active {
     transform: scale(0.95);
 }
 
