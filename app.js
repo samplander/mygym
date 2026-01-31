@@ -97,9 +97,118 @@ function renderQuickStats() {
     `;
 }
 
+// Volume Heatmap Rendering
+function generateHeatmapData() {
+    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const heatmapData = [];
+    const today = new Date();
+    
+    // Generate last 30 days
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        
+        const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        // Find workouts for this date
+        const dayWorkouts = history.filter(workout => {
+            if (!workout.completedAt) return false;
+            const workoutDate = new Date(workout.completedAt);
+            workoutDate.setHours(0, 0, 0, 0);
+            return workoutDate.toISOString().split('T')[0] === dateStr;
+        });
+        
+        // Calculate total volume for the day
+        let totalVolume = 0;
+        dayWorkouts.forEach(workout => {
+            workout.exercises.forEach(exercise => {
+                exercise.sets.forEach(set => {
+                    totalVolume += (set.actual.weight || 0) * (set.actual.reps || 0);
+                });
+            });
+        });
+        
+        heatmapData.push({
+            date: date,
+            dateStr: dateStr,
+            volume: totalVolume,
+            workoutCount: dayWorkouts.length
+        });
+    }
+    
+    return heatmapData;
+}
+
+function getVolumeIntensity(volume, maxVolume) {
+    if (volume === 0) return 0;
+    if (maxVolume === 0) return 1;
+    
+    const percentage = (volume / maxVolume) * 100;
+    
+    if (percentage >= 75) return 4; // Highest intensity
+    if (percentage >= 50) return 3;
+    if (percentage >= 25) return 2;
+    return 1; // Lowest intensity (but not zero)
+}
+
+function renderVolumeHeatmap() {
+    const container = document.getElementById('volumeHeatmap');
+    if (!container) return;
+    
+    const heatmapData = generateHeatmapData();
+    const maxVolume = Math.max(...heatmapData.map(d => d.volume));
+    
+    // Calculate total stats
+    const totalWorkouts = heatmapData.reduce((sum, d) => sum + d.workoutCount, 0);
+    const totalVolume = heatmapData.reduce((sum, d) => sum + d.volume, 0);
+    
+    // Day labels (M, W, F for compact view)
+    const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    
+    // Build grid HTML
+    let gridHTML = '<div class="heatmap-grid">';
+    
+    heatmapData.forEach((day, index) => {
+        const intensity = getVolumeIntensity(day.volume, maxVolume);
+        const dayOfWeek = day.date.getDay();
+        const dayLabel = dayLabels[dayOfWeek];
+        const monthDay = day.date.getDate();
+        const isToday = day.dateStr === new Date().toISOString().split('T')[0];
+        
+        const tooltipText = `${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}\n${formatVolume(day.volume)}${day.workoutCount > 0 ? ` (${day.workoutCount} workout${day.workoutCount > 1 ? 's' : ''})` : ' (No workout)'}`;
+        
+        gridHTML += `
+            <div class="heatmap-cell heatmap-level-${intensity} ${isToday ? 'heatmap-today' : ''}"
+                 title="${tooltipText}"
+                 data-volume="${day.volume}"
+                 data-date="${day.dateStr}">
+            </div>
+        `;
+    });
+    
+    gridHTML += '</div>';
+    
+    // Summary stats
+    const summaryHTML = `
+        <div class="heatmap-summary">
+            ${totalWorkouts} workout${totalWorkouts !== 1 ? 's' : ''} • ${formatVolume(totalVolume)}
+        </div>
+    `;
+    
+    container.innerHTML = `
+        <div class="heatmap-header">
+            <h6 class="heatmap-title">Last 30 Days</h6>
+        </div>
+        ${gridHTML}
+        ${summaryHTML}
+    `;
+}
+
 // Screen Management
 function showHomeScreen() {
     renderQuickStats(); // Refresh stats when returning to home
+    renderVolumeHeatmap(); // Refresh heatmap
     document.getElementById('homeScreen').classList.remove('d-none');
     document.getElementById('workoutScreen').classList.add('d-none');
     document.getElementById('historyScreen').classList.add('d-none');
