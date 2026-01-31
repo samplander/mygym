@@ -744,11 +744,12 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: var(--light-bg);
+    background: rgba(42, 42, 42, 0.6);
     padding: 6px 8px;
     border-radius: 6px;
     margin-bottom: 4px;
     font-size: 13px;
+    border: 1px solid rgba(34, 197, 94, 0.15);
 }
 
 .set-row.hidden {
@@ -765,7 +766,7 @@ body {
 
 .set-previous {
     font-size: 11px;
-    color: #6c757d;
+    color: #adb5bd;
     font-weight: 500;
     white-space: nowrap;
     flex-shrink: 0;
@@ -790,12 +791,13 @@ body {
     width: 50px;
     height: 28px;
     text-align: center;
-    border: 2px solid var(--border-color);
+    border: 2px solid rgba(34, 197, 94, 0.3);
     border-radius: 4px;
     padding: 2px;
     font-size: 14px;
     font-weight: 600;
-    background: white;
+    background: #1a1a1a;
+    color: white;
 }
 
 .set-input-reps {
@@ -809,14 +811,14 @@ body {
 
 .set-input-unit {
     font-size: 10px;
-    color: #6c757d;
+    color: #adb5bd;
     font-weight: 500;
     margin-right: 2px;
 }
 
 .set-input-separator {
     font-size: 13px;
-    color: #6c757d;
+    color: #adb5bd;
     font-weight: 600;
     margin: 0 1px;
 }
@@ -824,8 +826,8 @@ body {
 /* Set Completion Toggle Button */
 .set-complete-btn {
     background: transparent;
-    border: 2px solid #dee2e6;
-    color: #dee2e6;
+    border: 2px solid rgba(173, 181, 189, 0.4);
+    color: #adb5bd;
     width: 28px;
     height: 28px;
     border-radius: 4px;
@@ -855,16 +857,18 @@ body {
 
 /* Completed Set Row */
 .set-row.set-completed {
-    background: rgba(40, 167, 69, 0.08);
+    background: rgba(34, 197, 94, 0.15);
     opacity: 0.85;
+    border-color: rgba(34, 197, 94, 0.3);
 }
 
 /* Locked/Disabled Inputs */
 .set-input:disabled {
-    background: #f8f9fa;
+    background: rgba(26, 26, 26, 0.5);
     color: #6c757d;
     cursor: not-allowed;
     opacity: 0.7;
+    border-color: rgba(34, 197, 94, 0.2);
 }
 
 .set-delete-btn {
@@ -1522,7 +1526,6 @@ input[type="number"] {
     padding: 16px 12px;
     text-align: center;
     color: white;
-    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
 }
 
 .detail-stat-card i {
