@@ -1839,7 +1839,12 @@ function renderExercisesList(container) {
                     <div class="data-browser-item-title">${ex.name}</div>
                     <div class="data-browser-item-subtitle">${setCount} sets</div>
                 </div>
-                <i class="bi bi-chevron-right"></i>
+                <div class="data-browser-item-actions">
+                    <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteHistoryExercise(${idx})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <i class="bi bi-chevron-right"></i>
+                </div>
             </div>`;
     }).join('');
 }
@@ -1933,6 +1938,12 @@ function openSetEditor(setIndex) {
                 <input type="checkbox" id="editSetCompleted" ${set.completed ? 'checked' : ''}>
                 <label for="editSetCompleted">Mark as completed</label>
             </div>
+        </div>
+        
+        <div class="field-editor-group mt-3">
+            <button class="btn btn-outline-danger w-100" onclick="deleteHistorySet(${setIndex})">
+                <i class="bi bi-trash"></i> Delete Set
+            </button>
         </div>
     `;
     
@@ -2178,6 +2189,38 @@ function deleteHistoryItem(workoutId) {
     history = history.filter(w => w.id !== workoutId);
     localStorage.setItem('workoutHistory', JSON.stringify(history));
     
+    renderDataBrowserContent();
+}
+
+function deleteHistoryExercise(exerciseIndex) {
+    if (!confirm('Delete this exercise and all its sets?')) return;
+    
+    let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const workoutIdx = history.findIndex(w => w.id === dataBrowserState.workoutId);
+    
+    if (workoutIdx === -1) return;
+    
+    history[workoutIdx].exercises.splice(exerciseIndex, 1);
+    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    
+    renderDataBrowserContent();
+}
+
+function deleteHistorySet(setIndex) {
+    if (!confirm('Delete this set?')) return;
+    
+    let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const workoutIdx = history.findIndex(w => w.id === dataBrowserState.workoutId);
+    
+    if (workoutIdx === -1) return;
+    
+    const exercise = history[workoutIdx].exercises[dataBrowserState.exerciseIndex];
+    if (!exercise || !exercise.sets) return;
+    
+    exercise.sets.splice(setIndex, 1);
+    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    
+    getRecordEditorModal().hide();
     renderDataBrowserContent();
 }
 
