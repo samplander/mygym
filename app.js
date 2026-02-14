@@ -1624,3 +1624,549 @@ function initializeExerciseSearch() {
         });
     }
 }
+
+// ===== DATA MANAGEMENT =====
+
+let dataBrowserState = {
+    type: null,           // 'history', 'exercises', 'current'
+    workoutId: null,      // selected workout ID
+    exerciseIndex: null,  // selected exercise index
+    breadcrumb: []        // navigation path
+};
+
+let dataBrowserModal = null;
+let recordEditorModal = null;
+
+function getDataBrowserModal() {
+    if (!dataBrowserModal) {
+        dataBrowserModal = new bootstrap.Modal(document.getElementById('dataBrowserModal'));
+    }
+    return dataBrowserModal;
+}
+
+function getRecordEditorModal() {
+    if (!recordEditorModal) {
+        recordEditorModal = new bootstrap.Modal(document.getElementById('recordEditorModal'));
+    }
+    return recordEditorModal;
+}
+
+function showDataBrowser(type) {
+    dataBrowserState = { type, workoutId: null, exerciseIndex: null, breadcrumb: [] };
+    
+    const titles = {
+        'history': 'Workout History',
+        'exercises': 'Exercise Library', 
+        'current': 'Current Workout'
+    };
+    
+    document.getElementById('dataBrowserTitle').textContent = titles[type] || 'Data Browser';
+    document.getElementById('dataBrowserBackBtn').classList.add('d-none');
+    document.getElementById('dataBrowserBreadcrumb').classList.add('d-none');
+    
+    renderDataBrowserContent();
+    getDataBrowserModal().show();
+}
+
+function renderDataBrowserContent() {
+    const content = document.getElementById('dataBrowserContent');
+    const { type, workoutId, exerciseIndex } = dataBrowserState;
+    
+    if (type === 'history') {
+        if (workoutId !== null && exerciseIndex !== null) {
+            renderSetsList(content);
+        } else if (workoutId !== null) {
+            renderExercisesList(content);
+        } else {
+            renderHistoryList(content);
+        }
+    } else if (type === 'exercises') {
+        renderExerciseLibraryBrowser(content);
+    } else if (type === 'current') {
+        renderCurrentWorkoutBrowser(content);
+    }
+    
+    updateBreadcrumb();
+}
+
+function renderHistoryList(container) {
+    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    
+    if (history.length === 0) {
+        container.innerHTML = `
+            <div class="data-browser-empty">
+                <i class="bi bi-inbox"></i>
+                <p>No workout history</p>
+            </div>`;
+        return;
+    }
+    
+    container.innerHTML = history.map((w, idx) => {
+        const date = new Date(w.startTime).toLocaleDateString('en-US', { 
+            month: 'short', day: 'numeric', year: 'numeric' 
+        });
+        const exerciseCount = w.exercises?.length || 0;
+        const duration = w.duration ? Math.round(w.duration / 60) + ' min' : 'N/A';
+        
+        return `
+            <div class="data-browser-item" onclick="selectWorkoutToEdit(${w.id})">
+                <div class="data-browser-item-info">
+                    <div class="data-browser-item-title">${date}</div>
+                    <div class="data-browser-item-subtitle">${exerciseCount} exercises • ${duration}</div>
+                </div>
+                <div class="data-browser-item-actions">
+                    <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteHistoryItem(${w.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <i class="bi bi-chevron-right"></i>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function selectWorkoutToEdit(workoutId) {
+    dataBrowserState.workoutId = workoutId;
+    dataBrowserState.breadcrumb.push('Workout');
+    document.getElementById('dataBrowserBackBtn').classList.remove('d-none');
+    renderDataBrowserContent();
+}
+
+function renderExercisesList(container) {
+    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const workout = history.find(w => w.id === dataBrowserState.workoutId);
+    
+    if (!workout || !workout.exercises?.length) {
+        container.innerHTML = `
+            <div class="data-browser-empty">
+                <i class="bi bi-inbox"></i>
+                <p>No exercises in this workout</p>
+            </div>`;
+        return;
+    }
+    
+    container.innerHTML = workout.exercises.map((ex, idx) => {
+        const setCount = ex.sets?.length || 0;
+        return `
+            <div class="data-browser-item" onclick="selectExerciseToEdit(${idx})">
+                <div class="data-browser-item-info">
+                    <div class="data-browser-item-title">${ex.name}</div>
+                    <div class="data-browser-item-subtitle">${setCount} sets</div>
+                </div>
+                <i class="bi bi-chevron-right"></i>
+            </div>`;
+    }).join('');
+}
+
+function selectExerciseToEdit(exerciseIndex) {
+    dataBrowserState.exerciseIndex = exerciseIndex;
+    dataBrowserState.breadcrumb.push('Exercise');
+    renderDataBrowserContent();
+}
+
+function renderSetsList(container) {
+    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const workout = history.find(w => w.id === dataBrowserState.workoutId);
+    const exercise = workout?.exercises?.[dataBrowserState.exerciseIndex];
+    
+    if (!exercise || !exercise.sets?.length) {
+        container.innerHTML = `
+            <div class="data-browser-empty">
+                <i class="bi bi-inbox"></i>
+                <p>No sets in this exercise</p>
+            </div>`;
+        return;
+    }
+    
+    document.getElementById('dataBrowserTitle').textContent = exercise.name;
+    
+    container.innerHTML = exercise.sets.map((set, idx) => {
+        const actual = set.actual || {};
+        const display = exercise.timeMode 
+            ? `${actual.weight || 0}kg × ${actual.time || 0}s`
+            : `${actual.weight || 0}kg × ${actual.reps || 0}`;
+        const completed = set.completed ? '✓' : '';
+        
+        return `
+            <div class="data-browser-item" onclick="openSetEditor(${idx})">
+                <div class="data-browser-item-info">
+                    <div class="data-browser-item-title">Set ${idx + 1} ${completed}</div>
+                    <div class="data-browser-item-subtitle">${display}</div>
+                </div>
+                <i class="bi bi-pencil"></i>
+            </div>`;
+    }).join('');
+}
+
+function openSetEditor(setIndex) {
+    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const workout = history.find(w => w.id === dataBrowserState.workoutId);
+    const exercise = workout?.exercises?.[dataBrowserState.exerciseIndex];
+    const set = exercise?.sets?.[setIndex];
+    
+    if (!set) return;
+    
+    const planned = set.planned || {};
+    const actual = set.actual || {};
+    const isTimeMode = exercise.timeMode;
+    
+    document.getElementById('recordEditorTitle').textContent = `Edit Set ${setIndex + 1}`;
+    document.getElementById('recordEditorBody').innerHTML = `
+        <input type="hidden" id="editSetIndex" value="${setIndex}">
+        
+        <div class="field-editor-group">
+            <h6><i class="bi bi-bullseye"></i> Planned</h6>
+            <div class="field-row">
+                <div class="field-input">
+                    <label>Weight (kg)</label>
+                    <input type="number" id="editPlannedWeight" value="${planned.weight || 0}" inputmode="decimal">
+                </div>
+                <div class="field-input">
+                    <label>${isTimeMode ? 'Time (sec)' : 'Reps'}</label>
+                    <input type="number" id="editPlannedReps" value="${isTimeMode ? (planned.time || 0) : (planned.reps || 0)}" inputmode="numeric">
+                </div>
+            </div>
+        </div>
+        
+        <div class="field-editor-group">
+            <h6><i class="bi bi-check2-circle"></i> Actual</h6>
+            <div class="field-row">
+                <div class="field-input">
+                    <label>Weight (kg)</label>
+                    <input type="number" id="editActualWeight" value="${actual.weight || 0}" inputmode="decimal">
+                </div>
+                <div class="field-input">
+                    <label>${isTimeMode ? 'Time (sec)' : 'Reps'}</label>
+                    <input type="number" id="editActualReps" value="${isTimeMode ? (actual.time || 0) : (actual.reps || 0)}" inputmode="numeric">
+                </div>
+            </div>
+        </div>
+        
+        <div class="field-editor-group">
+            <div class="completed-toggle">
+                <input type="checkbox" id="editSetCompleted" ${set.completed ? 'checked' : ''}>
+                <label for="editSetCompleted">Mark as completed</label>
+            </div>
+        </div>
+    `;
+    
+    getRecordEditorModal().show();
+}
+
+function saveRecordChanges() {
+    const setIndex = parseInt(document.getElementById('editSetIndex').value);
+    
+    let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const workoutIdx = history.findIndex(w => w.id === dataBrowserState.workoutId);
+    
+    if (workoutIdx === -1) return;
+    
+    const exercise = history[workoutIdx].exercises[dataBrowserState.exerciseIndex];
+    const set = exercise.sets[setIndex];
+    const isTimeMode = exercise.timeMode;
+    
+    set.planned = set.planned || {};
+    set.actual = set.actual || {};
+    
+    set.planned.weight = parseFloat(document.getElementById('editPlannedWeight').value) || 0;
+    set.actual.weight = parseFloat(document.getElementById('editActualWeight').value) || 0;
+    
+    if (isTimeMode) {
+        set.planned.time = parseInt(document.getElementById('editPlannedReps').value) || 0;
+        set.actual.time = parseInt(document.getElementById('editActualReps').value) || 0;
+    } else {
+        set.planned.reps = parseInt(document.getElementById('editPlannedReps').value) || 0;
+        set.actual.reps = parseInt(document.getElementById('editActualReps').value) || 0;
+    }
+    
+    set.completed = document.getElementById('editSetCompleted').checked;
+    
+    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    
+    getRecordEditorModal().hide();
+    renderDataBrowserContent();
+}
+
+function dataBrowserBack() {
+    if (dataBrowserState.exerciseIndex !== null) {
+        dataBrowserState.exerciseIndex = null;
+        dataBrowserState.breadcrumb.pop();
+    } else if (dataBrowserState.workoutId !== null) {
+        dataBrowserState.workoutId = null;
+        dataBrowserState.breadcrumb.pop();
+        document.getElementById('dataBrowserBackBtn').classList.add('d-none');
+        
+        const titles = { 'history': 'Workout History', 'exercises': 'Exercise Library', 'current': 'Current Workout' };
+        document.getElementById('dataBrowserTitle').textContent = titles[dataBrowserState.type];
+    }
+    renderDataBrowserContent();
+}
+
+function updateBreadcrumb() {
+    const el = document.getElementById('dataBrowserBreadcrumb');
+    if (dataBrowserState.breadcrumb.length > 0) {
+        el.classList.remove('d-none');
+        el.innerHTML = dataBrowserState.breadcrumb.map(b => `<span>${b}</span>`).join(' › ');
+    } else {
+        el.classList.add('d-none');
+    }
+}
+
+function renderExerciseLibraryBrowser(container) {
+    const library = loadExerciseLibrary();
+    
+    if (library.length === 0) {
+        container.innerHTML = `
+            <div class="data-browser-empty">
+                <i class="bi bi-bookmark"></i>
+                <p>No exercises in library</p>
+            </div>`;
+        return;
+    }
+    
+    container.innerHTML = library.map(ex => {
+        const lastUsed = ex.lastUsed ? new Date(ex.lastUsed).toLocaleDateString() : 'Never';
+        return `
+            <div class="data-browser-item" onclick="openExerciseLibraryEditor(${ex.id})">
+                <div class="data-browser-item-info">
+                    <div class="data-browser-item-title">${ex.name}</div>
+                    <div class="data-browser-item-subtitle">${ex.category || 'No category'} • Used ${ex.usageCount || 0}× • Last: ${lastUsed}</div>
+                </div>
+                <i class="bi bi-pencil"></i>
+            </div>`;
+    }).join('');
+}
+
+function openExerciseLibraryEditor(exerciseId) {
+    const library = loadExerciseLibrary();
+    const exercise = library.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+    
+    document.getElementById('recordEditorTitle').textContent = 'Edit Exercise';
+    document.getElementById('recordEditorBody').innerHTML = `
+        <input type="hidden" id="editExerciseId" value="${exerciseId}">
+        
+        <div class="field-editor-group">
+            <h6><i class="bi bi-tag"></i> Details</h6>
+            <div class="field-input mb-3">
+                <label>Name</label>
+                <input type="text" id="editExerciseName" value="${exercise.name}" class="form-control">
+            </div>
+            <div class="field-input mb-3">
+                <label>Category</label>
+                <select id="editExerciseCategory" class="form-select">
+                    <option value="" ${!exercise.category ? 'selected' : ''}>No category</option>
+                    <option value="Push" ${exercise.category === 'Push' ? 'selected' : ''}>Push</option>
+                    <option value="Pull" ${exercise.category === 'Pull' ? 'selected' : ''}>Pull</option>
+                    <option value="Legs" ${exercise.category === 'Legs' ? 'selected' : ''}>Legs</option>
+                    <option value="Core" ${exercise.category === 'Core' ? 'selected' : ''}>Core</option>
+                    <option value="Cardio" ${exercise.category === 'Cardio' ? 'selected' : ''}>Cardio</option>
+                    <option value="Other" ${exercise.category === 'Other' ? 'selected' : ''}>Other</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="field-editor-group">
+            <h6><i class="bi bi-graph-up"></i> Stats</h6>
+            <div class="field-row">
+                <div class="field-input">
+                    <label>Usage Count</label>
+                    <input type="number" id="editExerciseUsage" value="${exercise.usageCount || 0}" inputmode="numeric">
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Override save button for exercise editing
+    document.getElementById('saveRecordBtn').onclick = saveExerciseLibraryChanges;
+    getRecordEditorModal().show();
+}
+
+function saveExerciseLibraryChanges() {
+    const exerciseId = parseInt(document.getElementById('editExerciseId').value);
+    let library = loadExerciseLibrary();
+    const idx = library.findIndex(ex => ex.id === exerciseId);
+    
+    if (idx === -1) return;
+    
+    library[idx].name = document.getElementById('editExerciseName').value.trim();
+    library[idx].category = document.getElementById('editExerciseCategory').value;
+    library[idx].usageCount = parseInt(document.getElementById('editExerciseUsage').value) || 0;
+    
+    saveExerciseLibrary(library);
+    
+    // Reset save button to default
+    document.getElementById('saveRecordBtn').onclick = saveRecordChanges;
+    
+    getRecordEditorModal().hide();
+    renderDataBrowserContent();
+}
+
+function renderCurrentWorkoutBrowser(container) {
+    if (!currentWorkout) {
+        container.innerHTML = `
+            <div class="data-browser-empty">
+                <i class="bi bi-lightning"></i>
+                <p>No active workout</p>
+            </div>`;
+        return;
+    }
+    
+    container.innerHTML = currentWorkout.exercises.map((ex, idx) => {
+        const setCount = ex.sets?.length || 0;
+        return `
+            <div class="data-browser-item" onclick="openCurrentWorkoutExerciseEditor(${idx})">
+                <div class="data-browser-item-info">
+                    <div class="data-browser-item-title">${ex.name}</div>
+                    <div class="data-browser-item-subtitle">${setCount} sets</div>
+                </div>
+                <i class="bi bi-pencil"></i>
+            </div>`;
+    }).join('');
+}
+
+function openCurrentWorkoutExerciseEditor(exerciseIndex) {
+    const exercise = currentWorkout.exercises[exerciseIndex];
+    if (!exercise) return;
+    
+    document.getElementById('recordEditorTitle').textContent = exercise.name;
+    
+    let setsHtml = exercise.sets.map((set, idx) => {
+        const planned = set.planned || {};
+        const actual = set.actual || {};
+        const isTimeMode = exercise.timeMode;
+        
+        return `
+            <div class="set-edit-card ${set.completed ? 'completed' : ''}">
+                <div class="set-edit-header">
+                    <h6>Set ${idx + 1}</h6>
+                    <div class="completed-toggle">
+                        <input type="checkbox" id="currentSetCompleted${idx}" ${set.completed ? 'checked' : ''}>
+                        <label for="currentSetCompleted${idx}">Done</label>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-input">
+                        <label>Weight</label>
+                        <input type="number" id="currentActualWeight${idx}" value="${actual.weight || 0}" inputmode="decimal">
+                    </div>
+                    <div class="field-input">
+                        <label>${isTimeMode ? 'Time' : 'Reps'}</label>
+                        <input type="number" id="currentActualReps${idx}" value="${isTimeMode ? (actual.time || 0) : (actual.reps || 0)}" inputmode="numeric">
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+    
+    document.getElementById('recordEditorBody').innerHTML = `
+        <input type="hidden" id="currentEditExerciseIndex" value="${exerciseIndex}">
+        ${setsHtml}
+    `;
+    
+    document.getElementById('saveRecordBtn').onclick = saveCurrentWorkoutChanges;
+    getRecordEditorModal().show();
+}
+
+function saveCurrentWorkoutChanges() {
+    const exerciseIndex = parseInt(document.getElementById('currentEditExerciseIndex').value);
+    const exercise = currentWorkout.exercises[exerciseIndex];
+    
+    exercise.sets.forEach((set, idx) => {
+        set.actual = set.actual || {};
+        set.actual.weight = parseFloat(document.getElementById(`currentActualWeight${idx}`).value) || 0;
+        
+        if (exercise.timeMode) {
+            set.actual.time = parseInt(document.getElementById(`currentActualReps${idx}`).value) || 0;
+        } else {
+            set.actual.reps = parseInt(document.getElementById(`currentActualReps${idx}`).value) || 0;
+        }
+        
+        set.completed = document.getElementById(`currentSetCompleted${idx}`).checked;
+    });
+    
+    saveCurrentWorkout();
+    
+    document.getElementById('saveRecordBtn').onclick = saveRecordChanges;
+    getRecordEditorModal().hide();
+    renderDataBrowserContent();
+}
+
+function deleteHistoryItem(workoutId) {
+    if (!confirm('Delete this workout from history?')) return;
+    
+    let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    history = history.filter(w => w.id !== workoutId);
+    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    
+    renderDataBrowserContent();
+}
+
+// ===== EXPORT / IMPORT =====
+
+function exportAllData() {
+    const data = {
+        exportDate: new Date().toISOString(),
+        version: '1.0',
+        currentWorkout: JSON.parse(localStorage.getItem('currentWorkout') || 'null'),
+        workoutHistory: JSON.parse(localStorage.getItem('workoutHistory') || '[]'),
+        exerciseLibrary: JSON.parse(localStorage.getItem('exerciseLibrary') || '[]')
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const date = new Date().toISOString().split('T')[0];
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mygym-backup-${date}.json`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+}
+
+function triggerImport() {
+    document.getElementById('importFileInput').click();
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // Validate structure
+            if (!data.workoutHistory && !data.exerciseLibrary && !data.currentWorkout) {
+                alert('Invalid backup file: missing data keys');
+                return;
+            }
+            
+            if (!confirm('This will replace all your current data. Continue?')) return;
+            
+            if (data.workoutHistory) {
+                localStorage.setItem('workoutHistory', JSON.stringify(data.workoutHistory));
+            }
+            if (data.exerciseLibrary) {
+                localStorage.setItem('exerciseLibrary', JSON.stringify(data.exerciseLibrary));
+            }
+            if (data.currentWorkout !== undefined) {
+                if (data.currentWorkout === null) {
+                    localStorage.removeItem('currentWorkout');
+                    currentWorkout = null;
+                } else {
+                    localStorage.setItem('currentWorkout', JSON.stringify(data.currentWorkout));
+                    currentWorkout = data.currentWorkout;
+                }
+            }
+            
+            alert('Data imported successfully!');
+            renderExerciseLibrary();
+            
+        } catch (err) {
+            alert('Failed to import: Invalid JSON file');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Reset for re-import
+}
