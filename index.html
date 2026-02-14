@@ -78,7 +78,7 @@
         </div>
 
         <!-- Bottom Navigation -->
-        <div class="bottom-nav">
+        <div class="bottom-nav nav-4-items">
             <button class="nav-item" onclick="showHomeScreen()">
                 <div class="nav-icon-wrapper">
                     <i class="bi bi-house-door"></i>
@@ -90,6 +90,12 @@
                     <i class="bi bi-graph-up"></i>
                 </div>
                 <span>History</span>
+            </button>
+            <button class="nav-item" onclick="showCategoryBreakdown()">
+                <div class="nav-icon-wrapper">
+                    <i class="bi bi-pie-chart-fill"></i>
+                </div>
+                <span>Stats</span>
             </button>
             <button class="nav-item" onclick="showSettingsScreen()">
                 <div class="nav-icon-wrapper">
@@ -444,6 +450,64 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" id="saveRecordBtn" class="btn btn-primary" onclick="saveRecordChanges()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Breakdown Modal -->
+    <div class="modal fade" id="categoryBreakdownModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Volume Breakdown</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Date Range Selector -->
+                    <div class="date-range-selector mb-4">
+                        <button class="date-range-btn active" onclick="setDateRange(7)">7 Days</button>
+                        <button class="date-range-btn" onclick="setDateRange(14)">14 Days</button>
+                        <button class="date-range-btn" onclick="setDateRange(30)">30 Days</button>
+                        <button class="date-range-btn" onclick="toggleCustomDateRange()">Custom</button>
+                    </div>
+                    
+                    <!-- Custom Date Range (hidden by default) -->
+                    <div id="customDateRange" class="custom-date-range d-none mb-4">
+                        <div class="custom-date-row">
+                            <div class="custom-date-input">
+                                <label class="form-label small">From</label>
+                                <input type="date" id="breakdownStartDate" class="form-control form-control-sm">
+                            </div>
+                            <div class="custom-date-input">
+                                <label class="form-label small">To</label>
+                                <input type="date" id="breakdownEndDate" class="form-control form-control-sm">
+                            </div>
+                            <button class="btn btn-primary custom-apply-btn" onclick="applyCustomDateRange()" title="Apply">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart Container -->
+                    <div class="chart-container">
+                        <div id="categoryDonut" class="category-donut">
+                            <div class="donut-center">
+                                <span id="donutTotalVolume">0</span>
+                                <small>kg total</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Legend -->
+                    <div id="categoryLegend" class="category-legend">
+                        <!-- Legend items rendered dynamically -->
+                    </div>
+                    
+                    <!-- Summary Stats -->
+                    <div id="breakdownSummary" class="breakdown-summary">
+                        <!-- Summary rendered dynamically -->
+                    </div>
                 </div>
             </div>
         </div>

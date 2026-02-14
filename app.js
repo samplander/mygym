@@ -2170,3 +2170,213 @@ function importData(event) {
     reader.readAsText(file);
     event.target.value = ''; // Reset for re-import
 }
+
+// ===== CATEGORY BREAKDOWN =====
+
+const CATEGORY_COLORS = {
+    'Push': '#22c55e',
+    'Pull': '#3b82f6',
+    'Legs': '#f59e0b',
+    'Core': '#a855f7',
+    'Cardio': '#ef4444',
+    'Other': '#6b7280',
+    'Uncategorized': '#374151'
+};
+
+let categoryBreakdownModal = null;
+let breakdownDateRange = { start: null, end: null };
+
+function getCategoryBreakdownModal() {
+    if (!categoryBreakdownModal) {
+        categoryBreakdownModal = new bootstrap.Modal(document.getElementById('categoryBreakdownModal'));
+    }
+    return categoryBreakdownModal;
+}
+
+function getCategoryForExercise(exerciseName) {
+    const library = loadExerciseLibrary();
+    const exercise = library.find(ex => ex.name.toLowerCase() === exerciseName.toLowerCase());
+    return exercise?.category || 'Uncategorized';
+}
+
+function calculateCategoryBreakdown(startDate, endDate) {
+    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const categories = {};
+    let totalVolume = 0;
+    let workoutCount = 0;
+    
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    
+    history.forEach(workout => {
+        const workoutDate = new Date(workout.startTime);
+        if (workoutDate < start || workoutDate > end) return;
+        
+        workoutCount++;
+        
+        workout.exercises?.forEach(exercise => {
+            const category = getCategoryForExercise(exercise.name);
+            
+            exercise.sets?.forEach(set => {
+                // Only count completed sets
+                const isCompleted = set.completed !== undefined ? set.completed : 
+                    (set.actual?.weight > 0 || set.actual?.reps > 0 || set.actual?.time > 0);
+                
+                if (!isCompleted) return;
+                
+                const weight = set.actual?.weight || 0;
+                const reps = set.actual?.reps || 1;
+                const volume = weight * reps;
+                
+                categories[category] = (categories[category] || 0) + volume;
+                totalVolume += volume;
+            });
+        });
+    });
+    
+    return { categories, totalVolume, workoutCount };
+}
+
+function renderCategoryChart(breakdownData) {
+    const donut = document.getElementById('categoryDonut');
+    const { categories, totalVolume } = breakdownData;
+    
+    if (totalVolume === 0) {
+        donut.style.background = '#374151';
+        document.getElementById('donutTotalVolume').textContent = '0';
+        return;
+    }
+    
+    // Sort categories by volume descending
+    const sorted = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+    
+    // Build conic-gradient
+    let gradientParts = [];
+    let currentDeg = 0;
+    
+    sorted.forEach(([category, volume]) => {
+        const percentage = volume / totalVolume;
+        const degrees = percentage * 360;
+        const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['Other'];
+        
+        gradientParts.push(`${color} ${currentDeg}deg ${currentDeg + degrees}deg`);
+        currentDeg += degrees;
+    });
+    
+    donut.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+    document.getElementById('donutTotalVolume').textContent = formatVolume(totalVolume);
+}
+
+function renderCategoryLegend(breakdownData) {
+    const legend = document.getElementById('categoryLegend');
+    const { categories, totalVolume } = breakdownData;
+    
+    if (totalVolume === 0) {
+        legend.innerHTML = '<p class="text-muted text-center">No data for this period</p>';
+        return;
+    }
+    
+    // Sort categories by volume descending
+    const sorted = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+    
+    legend.innerHTML = sorted.map(([category, volume]) => {
+        const percentage = ((volume / totalVolume) * 100).toFixed(1);
+        const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['Other'];
+        
+        return `
+            <div class="legend-item">
+                <span class="legend-swatch" style="background: ${color}"></span>
+                <span class="legend-label">${category}</span>
+                <span class="legend-value">${percentage}% (${formatVolume(volume)} kg)</span>
+            </div>`;
+    }).join('');
+}
+
+function renderBreakdownSummary(breakdownData) {
+    const summary = document.getElementById('breakdownSummary');
+    const { workoutCount, totalVolume } = breakdownData;
+    
+    summary.innerHTML = `
+        <div class="summary-stat">
+            <span class="summary-value">${workoutCount}</span>
+            <span class="summary-label">Workouts</span>
+        </div>
+        <div class="summary-stat">
+            <span class="summary-value">${formatVolume(totalVolume)}</span>
+            <span class="summary-label">Total Volume (kg)</span>
+        </div>`;
+}
+
+function formatVolume(volume) {
+    if (volume >= 1000) {
+        return (volume / 1000).toFixed(1) + 'k';
+    }
+    return Math.round(volume).toLocaleString();
+}
+
+function showCategoryBreakdown() {
+    // Default to last 7 days
+    setDateRange(7);
+    getCategoryBreakdownModal().show();
+}
+
+function setDateRange(days) {
+    // Update active button
+    document.querySelectorAll('.date-range-btn').forEach(btn => btn.classList.remove('active'));
+    event?.target?.classList.add('active');
+    
+    // Hide custom range
+    document.getElementById('customDateRange').classList.add('d-none');
+    
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - days + 1);
+    
+    breakdownDateRange = { start, end };
+    refreshBreakdown();
+}
+
+function toggleCustomDateRange() {
+    document.querySelectorAll('.date-range-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const customRange = document.getElementById('customDateRange');
+    customRange.classList.toggle('d-none');
+    
+    // Set default dates if empty
+    const startInput = document.getElementById('breakdownStartDate');
+    const endInput = document.getElementById('breakdownEndDate');
+    
+    if (!startInput.value) {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        startInput.value = weekAgo.toISOString().split('T')[0];
+    }
+    if (!endInput.value) {
+        endInput.value = new Date().toISOString().split('T')[0];
+    }
+}
+
+function applyCustomDateRange() {
+    const start = document.getElementById('breakdownStartDate').value;
+    const end = document.getElementById('breakdownEndDate').value;
+    
+    if (!start || !end) {
+        alert('Please select both start and end dates');
+        return;
+    }
+    
+    breakdownDateRange = { start: new Date(start), end: new Date(end) };
+    refreshBreakdown();
+}
+
+function refreshBreakdown() {
+    const { start, end } = breakdownDateRange;
+    const breakdownData = calculateCategoryBreakdown(start, end);
+    
+    renderCategoryChart(breakdownData);
+    renderCategoryLegend(breakdownData);
+    renderBreakdownSummary(breakdownData);
+}
