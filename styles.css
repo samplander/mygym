@@ -203,6 +203,31 @@ body {
     letter-spacing: 0.3px;
 }
 
+/* Heatmap Legend */
+.heatmap-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    justify-content: center;
+    margin-top: 8px;
+    padding: 0 4px;
+}
+
+.heatmap-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.heatmap-legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
 /* Mobile adjustments for heatmap */
 @media (max-width: 380px) {
     .volume-heatmap {

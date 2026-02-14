@@ -205,6 +205,12 @@ function renderVolumeHeatmap() {
     const totalWorkouts = heatmapData.reduce((sum, d) => sum + d.workoutCount, 0);
     const totalVolume = heatmapData.reduce((sum, d) => sum + d.volume, 0);
     
+    // Collect unique categories used in the 30-day period
+    const usedCategories = new Set();
+    heatmapData.forEach(day => {
+        Object.keys(day.categoryBreakdown).forEach(cat => usedCategories.add(cat));
+    });
+    
     // Day labels (M, W, F for compact view)
     const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     
@@ -244,6 +250,16 @@ function renderVolumeHeatmap() {
     
     gridHTML += '</div>';
     
+    // Build compact legend for categories used
+    let legendHTML = '';
+    if (usedCategories.size > 0) {
+        const legendItems = Array.from(usedCategories).map(cat => {
+            const color = getCategoryColor(cat);
+            return `<span class="heatmap-legend-item"><span class="heatmap-legend-swatch" style="background:${color}"></span>${cat}</span>`;
+        }).join('');
+        legendHTML = `<div class="heatmap-legend">${legendItems}</div>`;
+    }
+    
     // Summary stats
     const summaryHTML = `
         <div class="heatmap-summary">
@@ -256,6 +272,7 @@ function renderVolumeHeatmap() {
             <h6 class="heatmap-title">Last 30 Days</h6>
         </div>
         ${gridHTML}
+        ${legendHTML}
         ${summaryHTML}
     `;
 }
