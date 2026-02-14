@@ -429,6 +429,20 @@ function deleteExercise(exerciseId) {
     }
 }
 
+function moveExercise(exerciseId, direction) {
+    const exercises = currentWorkout.exercises;
+    const currentIndex = exercises.findIndex(ex => ex.id === exerciseId);
+    if (currentIndex === -1) return;
+    
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= exercises.length) return;
+    
+    // Swap positions
+    [exercises[currentIndex], exercises[newIndex]] = [exercises[newIndex], exercises[currentIndex]];
+    saveCurrentWorkout();
+    renderExercises();
+}
+
 // Set Management
 function addSet(exerciseId) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
@@ -650,25 +664,25 @@ function renderExercises() {
         return;
     }
     
-    container.innerHTML = currentWorkout.exercises.map(exercise => `
+    container.innerHTML = currentWorkout.exercises.map((exercise, index) => `
         <div class="exercise-card">
-            <div class="exercise-header" onclick="event.target.closest('.exercise-header').querySelector('.delete-exercise-btn').contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-details-btn').contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-time-btn').contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-previous-btn').contains(event.target) ? null : toggleExercise(${exercise.id})">
+            <div class="exercise-header" onclick="event.target.closest('.exercise-header').querySelector('.delete-exercise-btn')?.contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-time-btn')?.contains(event.target) || event.target.closest('.exercise-header').querySelector('.exercise-history-btn')?.contains(event.target) || event.target.closest('.exercise-header').querySelector('.reorder-up-btn')?.contains(event.target) || event.target.closest('.exercise-header').querySelector('.reorder-down-btn')?.contains(event.target) ? null : toggleExercise(${exercise.id})">
                 <div class="exercise-header-left">
                     <i class="bi bi-chevron-down chevron ${exercise.collapsed ? 'collapsed' : ''}"></i>
                     <h6>${exercise.name}</h6>
                 </div>
                 <div class="exercise-header-right">
-                    <button class="toggle-previous-btn" onclick="event.stopPropagation(); toggleShowPrevious(${exercise.id})" title="${exercise.showPrevious ? 'Hide' : 'Show'} previous values">
-                        <i class="bi bi-activity" style="opacity: ${exercise.showPrevious ? '1' : '0.5'}"></i>
+                    <button class="reorder-btn reorder-up-btn" onclick="event.stopPropagation(); moveExercise(${exercise.id}, 'up')" title="Move up" ${index === 0 ? 'disabled' : ''}>
+                        <i class="bi bi-chevron-up"></i>
+                    </button>
+                    <button class="reorder-btn reorder-down-btn" onclick="event.stopPropagation(); moveExercise(${exercise.id}, 'down')" title="Move down" ${index === currentWorkout.exercises.length - 1 ? 'disabled' : ''}>
+                        <i class="bi bi-chevron-down"></i>
                     </button>
                     <button class="toggle-time-btn" onclick="event.stopPropagation(); toggleTimeMode(${exercise.id})" title="${exercise.timeMode ? 'Switch to Reps' : 'Switch to Time'}">
                         <i class="bi bi-${exercise.timeMode ? '123' : 'stopwatch'}"></i>
                     </button>
-                    <button class="exercise-history-btn" onclick="event.stopPropagation(); showExerciseHistory('${exercise.name.replace(/'/g, "\\'")}')", title="View exercise history">
+                    <button class="exercise-history-btn" onclick="event.stopPropagation(); showExerciseHistory('${exercise.name.replace(/'/g, "\\'")}')" title="View exercise history">
                         <i class="bi bi-graph-up"></i>
-                    </button>
-                    <button class="toggle-details-btn" onclick="event.stopPropagation(); toggleExerciseDetails(${exercise.id})" title="${exercise.detailsHidden ? 'Show' : 'Hide'} details">
-                        <i class="bi bi-${exercise.detailsHidden ? 'eye-slash' : 'eye'}"></i>
                     </button>
                     <button class="delete-exercise-btn" onclick="event.stopPropagation(); deleteExercise(${exercise.id})">
                         <i class="bi bi-trash"></i>

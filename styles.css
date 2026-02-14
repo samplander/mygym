@@ -881,7 +881,6 @@ body {
 
 /* Time Mode Toggle Button */
 .toggle-time-btn,
-.toggle-previous-btn,
 .exercise-history-btn {
     background: transparent;
     border: 2px solid rgba(255, 255, 255, 0.3);
@@ -898,16 +897,45 @@ body {
 }
 
 .toggle-time-btn:hover,
-.toggle-previous-btn:hover,
 .exercise-history-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.5);
 }
 
 .toggle-time-btn:active,
-.toggle-previous-btn:active,
 .exercise-history-btn:active {
     transform: scale(0.95);
+}
+
+/* Reorder Buttons */
+.reorder-btn {
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 14px;
+    padding: 0;
+}
+
+.reorder-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.reorder-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.reorder-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
 }
 
 /* Mobile responsiveness for set rows */
