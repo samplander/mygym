@@ -48,6 +48,9 @@ function initializeApp() {
     // Initialize autocomplete
     initializeAutocomplete();
     
+    // Initialize category dropdowns
+    populateCategoryDropdowns();
+    
     // Render quick stats
     renderQuickStats();
     
@@ -119,12 +122,17 @@ function generateHeatmapData() {
             return workoutDate.toISOString().split('T')[0] === dateStr;
         });
         
-        // Calculate total volume for the day
+        // Calculate total volume and category breakdown for the day
         let totalVolume = 0;
+        const categoryBreakdown = {};
+        
         dayWorkouts.forEach(workout => {
             workout.exercises.forEach(exercise => {
+                const category = getCategoryForExercise(exercise.name);
                 exercise.sets.forEach(set => {
-                    totalVolume += (set.actual.weight || 0) * (set.actual.reps || 0);
+                    const volume = (set.actual?.weight || 0) * (set.actual?.reps || 0);
+                    totalVolume += volume;
+                    categoryBreakdown[category] = (categoryBreakdown[category] || 0) + volume;
                 });
             });
         });
@@ -133,7 +141,8 @@ function generateHeatmapData() {
             date: date,
             dateStr: dateStr,
             volume: totalVolume,
-            workoutCount: dayWorkouts.length
+            workoutCount: dayWorkouts.length,
+            categoryBreakdown: categoryBreakdown
         });
     }
     
@@ -150,6 +159,39 @@ function getVolumeIntensity(volume, maxVolume) {
     if (percentage >= 50) return 3;
     if (percentage >= 25) return 2;
     return 1; // Lowest intensity (but not zero)
+}
+
+function buildCategoryGradient(categoryBreakdown, totalVolume) {
+    if (totalVolume === 0 || Object.keys(categoryBreakdown).length === 0) {
+        return null;
+    }
+    
+    // Sort categories by volume descending
+    const sorted = Object.entries(categoryBreakdown).sort((a, b) => b[1] - a[1]);
+    
+    let gradientParts = [];
+    let currentPercent = 0;
+    
+    sorted.forEach(([category, volume]) => {
+        const percent = (volume / totalVolume) * 100;
+        const color = getCategoryColor(category);
+        const endPercent = currentPercent + percent;
+        
+        gradientParts.push(`${color} ${currentPercent.toFixed(1)}% ${endPercent.toFixed(1)}%`);
+        currentPercent = endPercent;
+    });
+    
+    return `linear-gradient(to right, ${gradientParts.join(', ')})`;
+}
+
+function buildCategoryTooltip(categoryBreakdown, totalVolume) {
+    if (totalVolume === 0) return '';
+    
+    const sorted = Object.entries(categoryBreakdown).sort((a, b) => b[1] - a[1]);
+    return sorted.map(([cat, vol]) => {
+        const pct = ((vol / totalVolume) * 100).toFixed(0);
+        return `${cat} ${pct}%`;
+    }).join(', ');
 }
 
 function renderVolumeHeatmap() {
@@ -170,16 +212,29 @@ function renderVolumeHeatmap() {
     let gridHTML = '<div class="heatmap-grid">';
     
     heatmapData.forEach((day, index) => {
-        const intensity = getVolumeIntensity(day.volume, maxVolume);
         const dayOfWeek = day.date.getDay();
         const dayLabel = dayLabels[dayOfWeek];
         const monthDay = day.date.getDate();
         const isToday = day.dateStr === new Date().toISOString().split('T')[0];
         
-        const tooltipText = `${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}\n${formatVolume(day.volume)}${day.workoutCount > 0 ? ` (${day.workoutCount} workout${day.workoutCount > 1 ? 's' : ''})` : ' (No workout)'}`;
+        // Build tooltip with category breakdown
+        let tooltipText = `${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}\n${formatVolume(day.volume)}`;
+        if (day.workoutCount > 0) {
+            tooltipText += ` (${day.workoutCount} workout${day.workoutCount > 1 ? 's' : ''})`;
+            const catBreakdown = buildCategoryTooltip(day.categoryBreakdown, day.volume);
+            if (catBreakdown) tooltipText += `\n${catBreakdown}`;
+        } else {
+            tooltipText += ' (No workout)';
+        }
+        
+        // Build gradient for workout days
+        const gradient = buildCategoryGradient(day.categoryBreakdown, day.volume);
+        const cellStyle = gradient ? `style="background: ${gradient}"` : '';
+        const cellClass = gradient ? '' : 'heatmap-level-0';
         
         gridHTML += `
-            <div class="heatmap-cell heatmap-level-${intensity} ${isToday ? 'heatmap-today' : ''}"
+            <div class="heatmap-cell ${cellClass} ${isToday ? 'heatmap-today' : ''}"
+                 ${cellStyle}
                  title="${tooltipText}"
                  data-volume="${day.volume}"
                  data-date="${day.dateStr}">
@@ -239,6 +294,7 @@ function showSettingsScreen() {
     document.getElementById('historyScreen').classList.add('d-none');
     document.getElementById('settingsScreen').classList.remove('d-none');
     renderExerciseLibrary();
+    renderCategoryList();
 }
 
 // Workout Management
@@ -1954,13 +2010,7 @@ function openExerciseLibraryEditor(exerciseId) {
             <div class="field-input mb-3">
                 <label>Category</label>
                 <select id="editExerciseCategory" class="form-select">
-                    <option value="" ${!exercise.category ? 'selected' : ''}>No category</option>
-                    <option value="Push" ${exercise.category === 'Push' ? 'selected' : ''}>Push</option>
-                    <option value="Pull" ${exercise.category === 'Pull' ? 'selected' : ''}>Pull</option>
-                    <option value="Legs" ${exercise.category === 'Legs' ? 'selected' : ''}>Legs</option>
-                    <option value="Core" ${exercise.category === 'Core' ? 'selected' : ''}>Core</option>
-                    <option value="Cardio" ${exercise.category === 'Cardio' ? 'selected' : ''}>Cardio</option>
-                    <option value="Other" ${exercise.category === 'Other' ? 'selected' : ''}>Other</option>
+                    ${getCategoryOptionsHtml(exercise.category)}
                 </select>
             </div>
         </div>
@@ -2171,17 +2221,218 @@ function importData(event) {
     event.target.value = ''; // Reset for re-import
 }
 
-// ===== CATEGORY BREAKDOWN =====
+// ===== CATEGORY CONFIGURATION =====
 
-const CATEGORY_COLORS = {
-    'Push': '#22c55e',
-    'Pull': '#3b82f6',
-    'Legs': '#f59e0b',
-    'Core': '#a855f7',
-    'Cardio': '#ef4444',
-    'Other': '#6b7280',
-    'Uncategorized': '#374151'
-};
+const DEFAULT_CATEGORIES = [
+    { id: 1, name: 'Push', color: '#22c55e', protected: false },
+    { id: 2, name: 'Pull', color: '#3b82f6', protected: false },
+    { id: 3, name: 'Legs', color: '#f59e0b', protected: false },
+    { id: 4, name: 'Core', color: '#a855f7', protected: false },
+    { id: 5, name: 'Cardio', color: '#ef4444', protected: false },
+    { id: 6, name: 'Other', color: '#6b7280', protected: true },
+    { id: 7, name: 'Uncategorized', color: '#374151', protected: true }
+];
+
+const COLOR_PRESETS = [
+    // Greens
+    '#22c55e', '#16a34a', '#15803d', '#166534', '#14532d',
+    // Blues
+    '#3b82f6', '#2563eb', '#1d4ed8', '#06b6d4', '#0891b2',
+    // Oranges/Yellows
+    '#f59e0b', '#d97706', '#b45309', '#eab308', '#ca8a04',
+    // Reds/Pinks
+    '#ef4444', '#dc2626', '#b91c1c', '#ec4899', '#db2777',
+    // Purples
+    '#a855f7', '#8b5cf6', '#7c3aed', '#6366f1', '#4f46e5',
+    // Neutrals/Others
+    '#f97316', '#14b8a6', '#0d9488', '#6b7280', '#374151'
+];
+
+function loadCategoryConfig() {
+    const stored = localStorage.getItem('categoryConfig');
+    if (stored) {
+        return JSON.parse(stored);
+    }
+    return [...DEFAULT_CATEGORIES];
+}
+
+function saveCategoryConfig(categories) {
+    localStorage.setItem('categoryConfig', JSON.stringify(categories));
+}
+
+function getCategoryColor(categoryName) {
+    const categories = loadCategoryConfig();
+    const cat = categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+    return cat?.color || '#374151';
+}
+
+function getCategories() {
+    const categories = loadCategoryConfig();
+    return categories.filter(c => c.name !== 'Uncategorized').map(c => c.name);
+}
+
+function populateCategoryDropdowns() {
+    const categories = getCategories();
+    const dropdowns = [
+        document.getElementById('quickCategorySelect'),
+        document.getElementById('exerciseLibraryCategoryInput')
+    ];
+    
+    dropdowns.forEach(dropdown => {
+        if (!dropdown) return;
+        const currentValue = dropdown.value;
+        dropdown.innerHTML = '<option value="">No category</option>' +
+            categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        dropdown.value = currentValue;
+    });
+}
+
+function getCategoryOptionsHtml(selectedCategory) {
+    const categories = getCategories();
+    return '<option value="">No category</option>' +
+        categories.map(cat => 
+            `<option value="${cat}" ${selectedCategory === cat ? 'selected' : ''}>${cat}</option>`
+        ).join('');
+}
+
+// Category Management UI
+let categoryModal = null;
+
+function getCategoryModal() {
+    if (!categoryModal) {
+        categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+    }
+    return categoryModal;
+}
+
+function renderCategoryList() {
+    const categories = loadCategoryConfig();
+    const list = document.getElementById('categoryList');
+    const count = document.getElementById('categoryCount');
+    
+    if (count) count.textContent = `${categories.filter(c => c.name !== 'Uncategorized').length} categories`;
+    
+    if (!list) return;
+    
+    list.innerHTML = categories.filter(c => c.name !== 'Uncategorized').map(cat => `
+        <div class="category-card">
+            <span class="category-swatch" style="background: ${cat.color}"></span>
+            <span class="category-name">${cat.name}</span>
+            <div class="category-actions">
+                <button class="btn-icon-action" onclick="showEditCategoryModal(${cat.id})">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                ${cat.protected ? '' : `
+                <button class="btn-icon-action btn-delete" onclick="deleteCategory(${cat.id})">
+                    <i class="bi bi-trash"></i>
+                </button>`}
+            </div>
+        </div>
+    `).join('');
+}
+
+function showAddCategoryModal() {
+    document.getElementById('categoryModalTitle').textContent = 'Add Category';
+    document.getElementById('categoryId').value = '';
+    document.getElementById('categoryNameInput').value = '';
+    renderColorSwatches('');
+    getCategoryModal().show();
+}
+
+function showEditCategoryModal(categoryId) {
+    const categories = loadCategoryConfig();
+    const cat = categories.find(c => c.id === categoryId);
+    if (!cat) return;
+    
+    document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+    document.getElementById('categoryId').value = categoryId;
+    document.getElementById('categoryNameInput').value = cat.name;
+    renderColorSwatches(cat.color);
+    getCategoryModal().show();
+}
+
+function renderColorSwatches(selectedColor) {
+    const container = document.getElementById('colorSwatchGrid');
+    container.innerHTML = COLOR_PRESETS.map(color => `
+        <button type="button" 
+                class="color-swatch ${color === selectedColor ? 'selected' : ''}" 
+                style="background: ${color}"
+                onclick="selectColorSwatch('${color}')">
+        </button>
+    `).join('');
+    document.getElementById('selectedColor').value = selectedColor || COLOR_PRESETS[0];
+}
+
+function selectColorSwatch(color) {
+    document.getElementById('selectedColor').value = color;
+    document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+    event.target.classList.add('selected');
+}
+
+function saveCategoryChanges() {
+    const categoryId = document.getElementById('categoryId').value;
+    const name = document.getElementById('categoryNameInput').value.trim();
+    const color = document.getElementById('selectedColor').value;
+    
+    if (!name) {
+        alert('Please enter a category name');
+        return;
+    }
+    
+    let categories = loadCategoryConfig();
+    
+    // Check for duplicate name
+    const duplicate = categories.find(c => 
+        c.name.toLowerCase() === name.toLowerCase() && 
+        c.id !== parseInt(categoryId)
+    );
+    if (duplicate) {
+        alert('A category with this name already exists');
+        return;
+    }
+    
+    if (categoryId) {
+        // Edit existing
+        const idx = categories.findIndex(c => c.id === parseInt(categoryId));
+        if (idx !== -1) {
+            categories[idx].name = name;
+            categories[idx].color = color;
+        }
+    } else {
+        // Add new
+        const maxId = Math.max(...categories.map(c => c.id), 0);
+        categories.push({
+            id: maxId + 1,
+            name: name,
+            color: color,
+            protected: false
+        });
+    }
+    
+    saveCategoryConfig(categories);
+    getCategoryModal().hide();
+    renderCategoryList();
+    populateCategoryDropdowns();
+}
+
+function deleteCategory(categoryId) {
+    const categories = loadCategoryConfig();
+    const cat = categories.find(c => c.id === categoryId);
+    
+    if (!cat || cat.protected) {
+        alert('This category cannot be deleted');
+        return;
+    }
+    
+    if (!confirm(`Delete category "${cat.name}"?`)) return;
+    
+    const updated = categories.filter(c => c.id !== categoryId);
+    saveCategoryConfig(updated);
+    renderCategoryList();
+    populateCategoryDropdowns();
+}
+
+// ===== CATEGORY BREAKDOWN =====
 
 let categoryBreakdownModal = null;
 let breakdownDateRange = { start: null, end: null };
@@ -2259,7 +2510,7 @@ function renderCategoryChart(breakdownData) {
     sorted.forEach(([category, volume]) => {
         const percentage = volume / totalVolume;
         const degrees = percentage * 360;
-        const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['Other'];
+        const color = getCategoryColor(category);
         
         gradientParts.push(`${color} ${currentDeg}deg ${currentDeg + degrees}deg`);
         currentDeg += degrees;
@@ -2283,7 +2534,7 @@ function renderCategoryLegend(breakdownData) {
     
     legend.innerHTML = sorted.map(([category, volume]) => {
         const percentage = ((volume / totalVolume) * 100).toFixed(1);
-        const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['Other'];
+        const color = getCategoryColor(category);
         
         return `
             <div class="legend-item">
