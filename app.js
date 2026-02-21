@@ -4,6 +4,7 @@ let timerInterval = null;
 
 // Coach API Configuration
 const COACH_API_URL = 'https://mygym-b733e99f8879.herokuapp.com';
+const COACH_API_KEY = '0616851c50ff903bd26b9f57f61f100131337b7ad415f777e695a8c45e4e172f'; // Change this to match your server's API_KEY
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
@@ -391,7 +392,10 @@ async function requestCoachWorkout(payload) {
     try {
         const response = await fetch(`${COACH_API_URL}/api/coach`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-API-Key': COACH_API_KEY
+            },
             body: JSON.stringify(payload)
         });
         
