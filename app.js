@@ -3,7 +3,7 @@ let currentWorkout = null;
 let timerInterval = null;
 
 // Coach API Configuration
-const COACH_API_URL = 'http://localhost:3001';
+const COACH_API_URL = 'https://mygym-b733e99f8879.herokuapp.com';
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
