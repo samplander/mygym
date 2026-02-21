@@ -2,6 +2,9 @@
 let currentWorkout = null;
 let timerInterval = null;
 
+// Coach API Configuration
+const COACH_API_URL = 'http://localhost:3001';
+
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
@@ -19,10 +22,13 @@ function initializeApp() {
     loadCurrentWorkout();
     
     // Event listeners
+    document.getElementById('coachWorkoutBtn').addEventListener('click', () => generateCoachWorkout());
     document.getElementById('startWorkoutBtn').addEventListener('click', startWorkout);
     document.getElementById('addExerciseBtn').addEventListener('click', () => showAddExerciseModal());
     document.getElementById('saveExerciseBtn').addEventListener('click', saveExercise);
     document.getElementById('completeWorkoutBtn').addEventListener('click', completeWorkout);
+    document.getElementById('generateFromPreferencesBtn').addEventListener('click', generateFromPreferences);
+    document.getElementById('startCoachWorkoutBtn').addEventListener('click', startCoachGeneratedWorkout);
     
     // Modal enter key support
     document.getElementById('exerciseNameInput').addEventListener('keypress', (e) => {
@@ -323,6 +329,171 @@ function startWorkout() {
         exercises: []
     };
     saveCurrentWorkout();
+    showWorkoutScreen();
+}
+
+// AI Coach Workout Generation
+async function generateCoachWorkout(customPreferences = null) {
+    // Check if there's an active workout
+    if (currentWorkout !== null) {
+        if (!confirm('Replace current workout with AI-generated plan?')) {
+            return;
+        }
+    }
+    
+    try {
+        // Show loading state
+        const coachBtn = document.getElementById('coachWorkoutBtn');
+        const coachBtnText = document.getElementById('coachBtnText');
+        const originalText = coachBtnText.textContent;
+        coachBtn.disabled = true;
+        coachBtnText.textContent = 'Generating...';
+        
+        // Gather localStorage data
+        const workoutHistory = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+        const exerciseLibrary = JSON.parse(localStorage.getItem('exerciseLibrary') || '[]');
+        const categoryConfig = JSON.parse(localStorage.getItem('categoryConfig') || '[]');
+        
+        // Build preferences (use custom or defaults)
+        const preferences = customPreferences || {
+            mode: 'progressive_overload',
+            timeAvailable: 60,
+            injuries: '',
+            notes: ''
+        };
+        
+        // Call API
+        await requestCoachWorkout({
+            workoutHistory,
+            exerciseLibrary,
+            categoryConfig,
+            preferences
+        });
+        
+        // Reset button state
+        coachBtn.disabled = false;
+        coachBtnText.textContent = originalText;
+        
+    } catch (error) {
+        // Reset button state
+        const coachBtn = document.getElementById('coachWorkoutBtn');
+        const coachBtnText = document.getElementById('coachBtnText');
+        coachBtn.disabled = false;
+        coachBtnText.textContent = 'AI Coach Workout';
+        
+        // Show error to user
+        console.error('Coach API Error:', error);
+        alert('Failed to generate workout: ' + error.message);
+    }
+}
+
+async function requestCoachWorkout(payload) {
+    try {
+        const response = await fetch(`${COACH_API_URL}/api/coach`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            // Try to extract error message from response
+            let errorMessage = `Server error: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                // Response wasn't JSON, use default message
+            }
+            throw new Error(errorMessage);
+        }
+        
+        const data = await response.json();
+        
+        // Validate response structure
+        if (!data.currentWorkout || !data.rationale || !data.focus) {
+            throw new Error('Invalid response from Coach API');
+        }
+        
+        // Process the response
+        handleCoachResponse(data);
+        
+    } catch (error) {
+        // Network errors or fetch failures
+        if (error.message.includes('Failed to fetch')) {
+            throw new Error('Cannot connect to Coach API. Is the server running on port 3001?');
+        }
+        throw error;
+    }
+}
+
+function handleCoachResponse(data) {
+    const { currentWorkout: newWorkout, exerciseLibrary, rationale, focus, estimatedMinutes } = data;
+    
+    // Write new workout to localStorage
+    currentWorkout = newWorkout;
+    saveCurrentWorkout();
+    
+    // Update exercise library if coach added new exercises
+    if (exerciseLibrary !== null && exerciseLibrary !== undefined) {
+        localStorage.setItem('exerciseLibrary', JSON.stringify(exerciseLibrary));
+    }
+    
+    // Show rationale modal before entering workout
+    showCoachRationaleModal(rationale, focus, estimatedMinutes);
+}
+
+function showCoachRationaleModal(rationale, focus, estimatedMinutes) {
+    // Populate modal content
+    document.getElementById('rationaleFocus').textContent = focus;
+    document.getElementById('rationaleDuration').textContent = `~${estimatedMinutes} min`;
+    document.getElementById('rationaleText').textContent = rationale;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('coachRationaleModal'));
+    modal.show();
+}
+
+function showCoachPreferencesModal() {
+    // Load saved preferences if they exist
+    const savedPrefs = JSON.parse(localStorage.getItem('coachPreferences') || '{}');
+    
+    // Populate fields
+    document.getElementById('coachModeSelect').value = savedPrefs.mode || 'progressive_overload';
+    document.getElementById('timeAvailableInput').value = savedPrefs.timeAvailable || 60;
+    document.getElementById('injuriesInput').value = savedPrefs.injuries || '';
+    document.getElementById('notesInput').value = savedPrefs.notes || '';
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('coachPreferencesModal'));
+    modal.show();
+}
+
+function generateFromPreferences() {
+    // Collect form values
+    const preferences = {
+        mode: document.getElementById('coachModeSelect').value,
+        timeAvailable: parseInt(document.getElementById('timeAvailableInput').value) || 60,
+        injuries: document.getElementById('injuriesInput').value.trim(),
+        notes: document.getElementById('notesInput').value.trim()
+    };
+    
+    // Save preferences for next time
+    localStorage.setItem('coachPreferences', JSON.stringify(preferences));
+    
+    // Hide modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('coachPreferencesModal'));
+    modal.hide();
+    
+    // Generate workout with custom preferences
+    generateCoachWorkout(preferences);
+}
+
+function startCoachGeneratedWorkout() {
+    // Hide rationale modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('coachRationaleModal'));
+    modal.hide();
+    
+    // Navigate to workout screen
     showWorkoutScreen();
 }
 

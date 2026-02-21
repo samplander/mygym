@@ -39,9 +39,17 @@
             
             <!-- Action Buttons -->
             <div class="home-actions w-100" style="max-width: 320px;">
-                <button id="startWorkoutBtn" class="glass-btn glass-btn-primary mb-3">
+                <button id="coachWorkoutBtn" class="glass-btn glass-btn-primary mb-3">
+                    <i class="bi bi-robot"></i>
+                    <span id="coachBtnText">AI Coach Workout</span>
+                </button>
+                <button id="startWorkoutBtn" class="glass-btn glass-btn-secondary mb-3">
                     <i class="bi bi-play-circle-fill"></i>
-                    <span>Start Workout</span>
+                    <span>Start Blank Workout</span>
+                </button>
+                <button class="glass-btn glass-btn-secondary mb-3" onclick="showCoachPreferencesModal()">
+                    <i class="bi bi-sliders"></i>
+                    <span>Customize Coach</span>
                 </button>
                 <button class="glass-btn glass-btn-secondary mb-3" onclick="showHistoryScreen()">
                     <i class="bi bi-graph-up"></i>
@@ -370,6 +378,70 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" id="saveExerciseBtn" class="btn btn-primary">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coach Preferences Modal -->
+    <div class="modal fade" id="coachPreferencesModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Customize AI Coach</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="coachModeSelect" class="form-label">Training Mode</label>
+                        <select id="coachModeSelect" class="form-select">
+                            <option value="progressive_overload" selected>Progressive Overload</option>
+                            <option value="weight_loss">Weight Loss</option>
+                            <option value="strength">Strength</option>
+                            <option value="fitness">General Fitness</option>
+                        </select>
+                        <small class="text-muted">The coach will design workouts optimized for this goal</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="timeAvailableInput" class="form-label">Time Available</label>
+                        <div class="input-group">
+                            <input type="number" id="timeAvailableInput" class="form-control" value="60" min="15" max="180">
+                            <span class="input-group-text">minutes</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="injuriesInput" class="form-label">Injuries or Limitations (Optional)</label>
+                        <textarea id="injuriesInput" class="form-control" rows="2" placeholder="e.g., left shoulder sore"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notesInput" class="form-label">Custom Notes (Optional)</label>
+                        <textarea id="notesInput" class="form-control" rows="2" placeholder="e.g., focus on back today"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="generateFromPreferencesBtn" class="btn btn-primary">Generate Workout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coach Rationale Modal -->
+    <div class="modal fade" id="coachRationaleModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Your Workout Plan</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <span class="badge bg-primary me-2" id="rationaleFocus">Focus</span>
+                        <span class="badge bg-info" id="rationaleDuration">Duration</span>
+                    </div>
+                    <p id="rationaleText" class="mb-0"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="startCoachWorkoutBtn" class="btn btn-primary w-100">Let's Go! 💪</button>
                 </div>
             </div>
         </div>
