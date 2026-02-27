@@ -1143,8 +1143,8 @@ body {
 .detail-actual {
     color: var(--success-color);
     font-weight: 600;
-}   border-color: var(--primary-color);
-}
+}  
+
 
 .value-input-compact {
     flex: 1;
@@ -1182,6 +1182,53 @@ body {
 .add-set-btn:hover {
     background: rgba(34, 197, 94, 0.1);
     border-color: #16a34a;
+}
+
+/* Swap Exercise Button */
+.swap-exercise-btn {
+    width: 20%;
+    height: var(--touch-target);
+    background: #2a2a2a;
+    border: 1px solid #22c55e;
+    color: #22c55e;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s ease;
+}
+
+.swap-exercise-btn:hover {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: #16a34a;
+}
+.swap-option {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 18px;
+    background: #2a2a2a;              /* removed the duplicate rgba background */
+    border: 2px dashed #22c55e;       /* match add-set-btn style */
+    color: #22c55e;
+    margin-bottom: 10px;
+    border-radius: 8px;               /* was 16px, now matches */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: var(--touch-target);
+}
+
+.swap-option:hover, .swap-option:active {
+    background: rgba(34, 197, 94, 0.1);  /* green tint like add-set-btn */
+    border-color: #16a34a;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.swap-option h6 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #22c55e;                    /* was #222 (dark on dark = invisible) */
 }
 
 /* Action Buttons */

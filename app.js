@@ -883,13 +883,70 @@ function renderExercises() {
             </div>
             <div class="exercise-body ${exercise.collapsed ? 'collapsed' : ''}">
                 ${renderSet(exercise.id, exercise)}
-                <button class="add-set-btn" onclick="addSet(${exercise.id})">
-                    <i class="bi bi-plus-lg"></i> Add Set
-                </button>
+                <div class="d-flex gap-2 mt-2">
+                    <button class="add-set-btn" onclick="addSet(${exercise.id})">
+                        <i class="bi bi-plus-lg"></i> Add Set
+                    </button>
+                    <button class="swap-exercise-btn" onclick="swapExercise(${exercise.id})">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </button>
+                </div>
             </div>
         </div>
     `).join('');
 }
+
+
+function swapExercise(exerciseId) {
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+
+    //get category of exercise
+    const library = loadExerciseLibrary();
+    const exerciseInLibrary = library.find(ex => ex.name.toLowerCase() === exercise.name.toLowerCase());
+    const category = exerciseInLibrary ? exerciseInLibrary.category : null;
+
+    // Filter library for exercises in the same category (or all if no category)
+    const candidates = category ? library.filter(ex => ex.category === category && ex.name.toLowerCase() !== exercise.name.toLowerCase()) : library.filter(ex => ex.name.toLowerCase() !== exercise.name.toLowerCase());
+    if (candidates.length === 0) {
+        alert('No alternative exercises available in the library to swap with!');
+        return;
+    }
+
+    // Show swap exercise modal
+    const swapExerciseModal = new bootstrap.Modal(document.getElementById('swapExerciseModal'));
+    swapExerciseModal.show();
+    renderSwapOptions(exerciseId);
+}
+
+function renderSwapOptions(exerciseId) {
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+
+        //get category of exercise
+    const library = loadExerciseLibrary();
+    const exerciseInLibrary = library.find(ex => ex.name.toLowerCase() === exercise.name.toLowerCase());
+    const category = exerciseInLibrary ? exerciseInLibrary.category : null;
+    const candidates = category ? library.filter(ex => ex.category === category && ex.name.toLowerCase() !== exercise.name.toLowerCase()) : library.filter(ex => ex.name.toLowerCase() !== exercise.name.toLowerCase());
+
+    const container = document.getElementById('swapOptionsContainer');
+    container.innerHTML = candidates.map(candidate => `
+        <div class="swap-option" onclick="performSwap(${exerciseId}, '${candidate.name.replace(/'/g, "\\'")}')">
+            <h6>${candidate.name}</h6>
+        </div>
+    `).join('');
+}
+
+function performSwap(exerciseId, newName) {
+    const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+    exercise.name = newName;
+    saveCurrentWorkout();
+    renderExercises();
+    const swapExerciseModal = bootstrap.Modal.getInstance(document.getElementById('swapExerciseModal'));
+    swapExerciseModal.hide();
+}
+
 
 function renderSet(exerciseId, exercise) {
     if (!exercise.sets || exercise.sets.length === 0) {
