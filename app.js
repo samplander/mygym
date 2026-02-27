@@ -25,6 +25,13 @@ function initializeApp() {
     // Event listeners
     document.getElementById('coachWorkoutBtn').addEventListener('click', () => generateCoachWorkout());
     document.getElementById('startWorkoutBtn').addEventListener('click', startWorkout);
+    document.getElementById('continueWorkoutBtn').addEventListener('click', () => {
+        if (currentWorkout) {
+            showWorkoutScreen();
+        } else {
+            alert('No active workout found. Please start a new workout.');
+        }
+    });
     document.getElementById('addExerciseBtn').addEventListener('click', () => showAddExerciseModal());
     document.getElementById('saveExerciseBtn').addEventListener('click', saveExercise);
     document.getElementById('completeWorkoutBtn').addEventListener('click', completeWorkout);
@@ -63,7 +70,8 @@ function initializeApp() {
     
     // Show appropriate screen
     if (currentWorkout) {
-        showWorkoutScreen();
+        //showWorkoutScreen(); //disabled this for now to always show home screen first, can re-enable later if we want to auto-resume workout on page load
+         showHomeScreen();
     } else {
         showHomeScreen();
     }
