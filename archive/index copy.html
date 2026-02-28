@@ -26,10 +26,7 @@
         <div class="container-fluid h-100 d-flex flex-column justify-content-center align-items-center px-4 py-5">
             <!-- App Icon -->
             <div class="app-icon mb-3">
-                <svg width="40" height="40" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="96" height="96" rx="20" fill="#22c55e"/>
-                    <path d="M28 68V28h18c10 0 18 6 18 15s-8 15-18 15h-3l20 10" stroke="#0a0a0a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                </svg>
+                <i class="bi bi-bullseye"></i>
             </div>
             
             <!-- Title -->
@@ -50,11 +47,11 @@
             <div class="home-actions w-100" style="max-width: 320px;">
                 <button id="coachWorkoutBtn" class="glass-btn glass-btn-primary mb-3">
                     <i class="bi bi-robot"></i>
-                    <span id="coachBtnText">AI Coach Workout</span>
+                    <span id="coachBtnText">Ai Coach Workout</span>
                 </button>
                  <button class="glass-btn glass-btn-secondary mb-3" onclick="showCoachPreferencesModal()">
                     <i class="bi bi-sliders"></i>
-                    <span>Customize AI Coach</span>
+                    <span>Customize Ai Coach</span>
                 </button>
                 <button id="startWorkoutBtn" class="glass-btn glass-btn-secondary mb-3">
                     <i class="bi bi-play-circle-fill"></i>
@@ -251,21 +248,21 @@
                 </div>
                 
                 <div class="data-management-buttons">
-                    <button class="btn btn-outline-secondary w-100 mb-2" onclick="showDataBrowser('history')">
+                    <button class="btn btn-outline-light w-100 mb-2" onclick="showDataBrowser('history')">
                         <i class="bi bi-clock-history"></i> Edit Workout History
                     </button>
-                    <button class="btn btn-outline-secondary w-100 mb-2" onclick="showDataBrowser('exercises')">
+                    <button class="btn btn-outline-light w-100 mb-2" onclick="showDataBrowser('exercises')">
                         <i class="bi bi-bookmark-star"></i> Edit Exercise Library
                     </button>
-                    <button class="btn btn-outline-secondary w-100 mb-3" onclick="showDataBrowser('current')">
+                    <button class="btn btn-outline-light w-100 mb-3" onclick="showDataBrowser('current')">
                         <i class="bi bi-activity"></i> Edit Current Workout
                     </button>
                     
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary flex-fill" onclick="exportAllData()">
+                        <button class="btn btn-outline-success flex-fill" onclick="exportAllData()">
                             <i class="bi bi-download"></i> Export
                         </button>
-                        <button class="btn btn-outline-secondary flex-fill" onclick="triggerImport()">
+                        <button class="btn btn-outline-warning flex-fill" onclick="triggerImport()">
                             <i class="bi bi-upload"></i> Import
                         </button>
                         <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
@@ -384,7 +381,7 @@
                     </div>
                     
                     <!-- Hint Text -->
-                    <div id="autocompleteHint" class="mt-2 small" style="display: none; color: #a1a1aa;">
+                    <div id="autocompleteHint" class="mt-2 text-muted small" style="display: none;">
                         <i class="bi bi-info-circle"></i> Press Enter to add as new exercise
                     </div>
                 </div>
@@ -413,13 +410,13 @@
                             <option value="strength">Strength</option>
                             <option value="fitness">General Fitness</option>
                         </select>
-                        <small style="color:#a1a1aa;">The coach will design workouts optimized for this goal</small>
+                        <small class="text-muted">The coach will design workouts optimized for this goal</small>
                     </div>
                     <div class="mb-3">
                         <label for="timeAvailableInput" class="form-label">Time Available</label>
                         <div class="input-group">
                             <input type="number" id="timeAvailableInput" class="form-control" value="60" min="15" max="180">
-                            <span class="input-group-text" style="background:#2a2a2a;border:1px solid rgba(34,197,94,0.3);color:#a1a1aa;">minutes</span>
+                            <span class="input-group-text">minutes</span>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -448,8 +445,8 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <span class="badge me-2" id="rationaleFocus" style="background:linear-gradient(135deg,#22c55e,#16a34a);">Focus</span>
-                        <span class="badge" id="rationaleDuration" style="background:#2a2a2a;border:1px solid #22c55e;color:#22c55e;">Duration</span>
+                        <span class="badge bg-primary me-2" id="rationaleFocus">Focus</span>
+                        <span class="badge bg-info" id="rationaleDuration">Duration</span>
                     </div>
                     <p id="rationaleText" class="mb-0"></p>
                 </div>
@@ -637,7 +634,7 @@
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Swap Exercise</h5>
+                    <h5 class="modal-title">Swap Excercise</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
