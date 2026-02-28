@@ -7,14 +7,8 @@
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#22c55e">
-    
-    <!-- Favicons -->
-    <link rel="icon" href="favicon.ico" sizes="any">
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <meta name="theme-color" content="#667eea">
+    <link rel="apple-touch-icon" href="icon-192.png">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -31,7 +25,7 @@
             
             <!-- Title -->
             <h1 class="home-title mb-2">RepForge</h1>
-            <p class="home-tagline mb-4">Train smarter, achieve your goals</p>
+            <p class="home-tagline mb-4">Track your progress, achieve your goals</p>
             
             <!-- Quick Stats Preview -->
             <div id="quickStats" class="quick-stats mb-3">
@@ -47,11 +41,11 @@
             <div class="home-actions w-100" style="max-width: 320px;">
                 <button id="coachWorkoutBtn" class="glass-btn glass-btn-primary mb-3">
                     <i class="bi bi-robot"></i>
-                    <span id="coachBtnText">Ai Coach Workout</span>
+                    <span id="coachBtnText">AI Coach Workout</span>
                 </button>
                  <button class="glass-btn glass-btn-secondary mb-3" onclick="showCoachPreferencesModal()">
                     <i class="bi bi-sliders"></i>
-                    <span>Customize Ai Coach</span>
+                    <span>AI Custom Coach Workout</span>
                 </button>
                 <button id="startWorkoutBtn" class="glass-btn glass-btn-secondary mb-3">
                     <i class="bi bi-play-circle-fill"></i>
@@ -60,6 +54,10 @@
                 <button id="continueWorkoutBtn" class="glass-btn glass-btn-secondary mb-3">
                     <i class="bi bi-arrow-repeat"></i>
                     <span>Continue Workout</span>
+                </button>
+                <button class="glass-btn glass-btn-secondary mb-3" onclick="showCoachPreferencesModal()">
+                    <i class="bi bi-sliders"></i>
+                    <span>Customize Coach</span>
                 </button>
                 <button class="glass-btn glass-btn-secondary mb-3" onclick="showHistoryScreen()">
                     <i class="bi bi-graph-up"></i>

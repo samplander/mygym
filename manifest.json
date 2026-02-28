@@ -1,11 +1,11 @@
 {
-  "name": "Gym Tracker",
-  "short_name": "Gym",
-  "description": "Track your progress, achieve your goals",
+  "name": "RepForge - Your Personal Fitness Companion",
+  "short_name": "RepForge",
+  "description": "Train smarter, achieve your goals",
   "start_url": "/mygym",
   "display": "standalone",
-  "background_color": "#667eea",
-  "theme_color": "#667eea",
+  "background_color": "#0a0a0a",
+  "theme_color": "#22c55e",
   "orientation": "portrait",
   "icons": [
     {
