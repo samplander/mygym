@@ -133,7 +133,12 @@
         <div class="sticky-header">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="mb-0">Active Workout</h5>
-                <div class="timer" id="workoutTimer">00:00:00</div>
+                <div class="d-flex align-items-center gap-1">
+                    <div class="timer" id="workoutTimer">00:00:00</div>
+                    <button class="btn btn-link p-0" onclick="resetTimer()" title="Reset timer" style="line-height:1">
+                        <i class="bi bi-arrow-counterclockwise" style="color: var(--primary-color); font-size: 14px;"></i>
+                    </button>
+                </div>
             </div>
             <button id="toggleAllBtn" class="btn btn-sm btn-outline-secondary w-100" onclick="toggleAllExercises()">
                 <i class="bi bi-arrows-collapse"></i> <span id="toggleAllText">Collapse All</span>

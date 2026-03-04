@@ -1057,6 +1057,13 @@ function stopTimer() {
     }
 }
 
+function resetTimer() {
+    currentWorkout.startTime = new Date().toISOString();
+    saveCurrentWorkout();
+    stopTimer();
+    startTimer();
+}
+
 function pad(num) {
     return num.toString().padStart(2, '0');
 }
