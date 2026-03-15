@@ -287,8 +287,10 @@ body {
     transition: left 0.5s;
 }
 
-.glass-btn:hover::before {
-    left: 100%;
+@media (hover: hover) {
+    .glass-btn:hover::before {
+        left: 100%;
+    }
 }
 
 .glass-btn-primary {
