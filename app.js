@@ -36,7 +36,7 @@ function initializeApp() {
     loadCurrentWorkout();
     
     // Event listeners
-    document.getElementById('coachWorkoutBtn').addEventListener('click', () => generateCoachWorkout());
+    document.getElementById('coachWorkoutBtn').addEventListener('click', () => showCoachPreferencesModal());
     document.getElementById('startWorkoutBtn').addEventListener('click', startWorkout);
     document.getElementById('continueWorkoutBtn').addEventListener('click', () => {
         if (currentWorkout) {
