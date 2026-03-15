@@ -2073,17 +2073,19 @@ function renderHistoryList(container) {
         });
         const exerciseCount = w.exercises?.length || 0;
         const duration = w.duration ? Math.round(w.duration / 60) + ' min' : 'N/A';
+        const hasValidId = w.id != null;
         
         return `
-            <div class="data-browser-item" onclick="selectWorkoutToEdit(${w.id})">
+            <div class="data-browser-item" onclick="${hasValidId ? `selectWorkoutToEdit(${w.id})` : ''}">
                 <div class="data-browser-item-info">
                     <div class="data-browser-item-title">${date}</div>
-                    <div class="data-browser-item-subtitle">${exerciseCount} exercises • ${duration}</div>
+                    <div class="data-browser-item-subtitle">${exerciseCount} exercises • ${duration}${!hasValidId ? ' • <span class="text-warning">missing ID</span>' : ''}</div>
                 </div>
                 <div class="data-browser-item-actions">
-                    <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteHistoryItem(${w.id})">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    ${hasValidId
+                        ? `<button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteHistoryItem(${w.id})"><i class="bi bi-trash"></i></button>`
+                        : `<button class="btn btn-sm btn-outline-danger" disabled title="Cannot delete: workout has no ID"><i class="bi bi-trash"></i></button>`
+                    }
                     <i class="bi bi-chevron-right"></i>
                 </div>
             </div>`;
@@ -2465,7 +2467,13 @@ function deleteHistoryItem(workoutId) {
     if (!confirm('Delete this workout from history?')) return;
     
     let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
-    history = history.filter(w => w.id !== workoutId);
+    const idx = history.findIndex(w => w.id === workoutId);
+    if (idx === -1) {
+        alert('Workout not found — it may have already been deleted.');
+        renderDataBrowserContent();
+        return;
+    }
+    history.splice(idx, 1);
     localStorage.setItem('workoutHistory', JSON.stringify(history));
     
     renderDataBrowserContent();
@@ -2493,8 +2501,21 @@ function deleteHistorySet(setIndex) {
     
     if (workoutIdx === -1) return;
     
-    const exercise = history[workoutIdx].exercises[dataBrowserState.exerciseIndex];
+    const exercises = history[workoutIdx].exercises;
+    const exerciseIdx = dataBrowserState.exerciseIndex;
+    if (exerciseIdx == null || exerciseIdx < 0 || exerciseIdx >= exercises.length) {
+        alert('Could not locate the exercise — please close and reopen the editor.');
+        getRecordEditorModal().hide();
+        return;
+    }
+    
+    const exercise = exercises[exerciseIdx];
     if (!exercise || !exercise.sets) return;
+    if (setIndex < 0 || setIndex >= exercise.sets.length) {
+        alert('Could not locate the set — please close and reopen the editor.');
+        getRecordEditorModal().hide();
+        return;
+    }
     
     exercise.sets.splice(setIndex, 1);
     localStorage.setItem('workoutHistory', JSON.stringify(history));
@@ -2548,7 +2569,19 @@ function importData(event) {
             if (!confirm('This will replace all your current data. Continue?')) return;
             
             if (data.workoutHistory) {
-                localStorage.setItem('workoutHistory', JSON.stringify(data.workoutHistory));
+                // Sanitise: assign IDs to any workouts missing them, and deduplicate IDs
+                const seenIds = new Set();
+                let idOffset = 0;
+                const sanitised = data.workoutHistory.map(w => {
+                    let id = w.id;
+                    if (id == null || seenIds.has(id)) {
+                        // Generate a unique ID that won't collide
+                        do { id = Date.now() + (++idOffset); } while (seenIds.has(id));
+                    }
+                    seenIds.add(id);
+                    return { ...w, id };
+                });
+                localStorage.setItem('workoutHistory', JSON.stringify(sanitised));
             }
             if (data.exerciseLibrary) {
                 localStorage.setItem('exerciseLibrary', JSON.stringify(data.exerciseLibrary));
