@@ -13,6 +13,19 @@ if ('serviceWorker' in navigator) {
         .catch(error => console.log('Service Worker registration failed:', error));
 }
 
+// PWA Install Prompt
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+});
+
+window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    hideInstallBanner();
+});
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
@@ -58,6 +71,9 @@ function initializeApp() {
     
     // Initialize search
     setTimeout(() => initializeExerciseSearch(), 100);
+
+    // Initialize PWA install prompt (delayed so it doesn't interrupt page load)
+    setTimeout(() => initializeInstallPrompt(), 2500);
     
     // Initialize autocomplete
     initializeAutocomplete();
@@ -354,9 +370,12 @@ async function generateCoachWorkout(customPreferences = null) {
         // Show loading state
         const coachBtn = document.getElementById('coachWorkoutBtn');
         const coachBtnText = document.getElementById('coachBtnText');
+        const coachBtnIcon = document.getElementById('coachBtnIcon');
         const originalText = coachBtnText.textContent;
         coachBtn.disabled = true;
+        coachBtn.classList.add('glass-btn-loading');
         coachBtnText.textContent = 'Generating...';
+        coachBtnIcon.className = 'bi bi-arrow-clockwise spin';
         
         // Gather localStorage data
         const workoutHistory = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
@@ -381,14 +400,19 @@ async function generateCoachWorkout(customPreferences = null) {
         
         // Reset button state
         coachBtn.disabled = false;
+        coachBtn.classList.remove('glass-btn-loading');
         coachBtnText.textContent = originalText;
+        coachBtnIcon.className = 'bi bi-robot';
         
     } catch (error) {
         // Reset button state
         const coachBtn = document.getElementById('coachWorkoutBtn');
         const coachBtnText = document.getElementById('coachBtnText');
+        const coachBtnIcon = document.getElementById('coachBtnIcon');
         coachBtn.disabled = false;
+        coachBtn.classList.remove('glass-btn-loading');
         coachBtnText.textContent = 'AI Coach Workout';
+        coachBtnIcon.className = 'bi bi-robot';
         
         // Show error to user
         console.error('Coach API Error:', error);
@@ -455,12 +479,20 @@ function handleCoachResponse(data) {
 }
 
 function showCoachRationaleModal(rationale, focus, estimatedMinutes) {
-    // Populate modal content
     document.getElementById('rationaleFocus').textContent = focus;
     document.getElementById('rationaleDuration').textContent = `~${estimatedMinutes} min`;
-    document.getElementById('rationaleText').textContent = rationale;
-    
-    // Show modal
+
+    // Split into individual sentences and render each as its own paragraph
+    const container = document.getElementById('rationaleText');
+    container.innerHTML = '';
+    const sentences = rationale.match(/[^.!?]+[.!?]+/g) || [rationale];
+    sentences.map(s => s.trim()).filter(Boolean).forEach(sentence => {
+        const p = document.createElement('p');
+        p.className = 'mb-2';
+        p.textContent = sentence;
+        container.appendChild(p);
+    });
+
     const modal = new bootstrap.Modal(document.getElementById('coachRationaleModal'));
     modal.show();
 }
@@ -2951,4 +2983,66 @@ function refreshBreakdown() {
     renderCategoryChart(breakdownData);
     renderCategoryLegend(breakdownData);
     renderBreakdownSummary(breakdownData);
+}
+
+// ─── PWA Install Prompt ───────────────────────────────────────────────────────
+
+function initializeInstallPrompt() {
+    // Skip if already running as installed PWA
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) return;
+
+    // Skip if user dismissed within the last 7 days
+    const dismissed = localStorage.getItem('installPromptDismissed');
+    if (dismissed && (Date.now() - parseInt(dismissed)) < 7 * 24 * 60 * 60 * 1000) return;
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isIOSSafari = isIOS && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+
+    if (isIOSSafari) {
+        const addBtn = document.getElementById('installAddBtn');
+        if (addBtn) addBtn.textContent = 'Show Me How';
+        showInstallBanner();
+    } else if (deferredInstallPrompt) {
+        showInstallBanner();
+    }
+}
+
+function showInstallBanner() {
+    const banner = document.getElementById('installBanner');
+    if (!banner) return;
+    banner.style.display = 'block';
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => banner.classList.add('install-banner-visible'));
+    });
+}
+
+function hideInstallBanner() {
+    const banner = document.getElementById('installBanner');
+    if (!banner) return;
+    banner.classList.remove('install-banner-visible');
+    setTimeout(() => { banner.style.display = 'none'; }, 350);
+}
+
+function dismissInstallBanner() {
+    localStorage.setItem('installPromptDismissed', Date.now().toString());
+    hideInstallBanner();
+}
+
+function triggerInstall() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    if (isIOS) {
+        const instructions = document.getElementById('iosInstallInstructions');
+        const addBtn = document.getElementById('installAddBtn');
+        if (!instructions) return;
+        const showing = instructions.style.display !== 'none';
+        instructions.style.display = showing ? 'none' : 'block';
+        if (addBtn) addBtn.textContent = showing ? 'Show Me How' : 'Got it ✓';
+    } else if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then((result) => {
+            if (result.outcome === 'accepted') hideInstallBanner();
+            deferredInstallPrompt = null;
+        });
+    }
 }

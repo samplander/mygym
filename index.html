@@ -8,6 +8,11 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#22c55e">
+
+    <!-- iOS PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RepForge">
     
     <!-- Favicons -->
     <link rel="icon" href="favicon.ico" sizes="any">
@@ -49,7 +54,7 @@
             <!-- Action Buttons -->
             <div class="home-actions w-100" style="max-width: 320px;">
                 <button id="coachWorkoutBtn" class="glass-btn glass-btn-primary mb-3">
-                    <i class="bi bi-robot"></i>
+                    <i id="coachBtnIcon" class="bi bi-robot"></i>
                     <span id="coachBtnText">AI Coach Workout</span>
                 </button>
                  <button class="glass-btn glass-btn-secondary mb-3" onclick="showCoachPreferencesModal()">
@@ -446,7 +451,7 @@
 
     <!-- Coach Rationale Modal -->
     <div class="modal fade" id="coachRationaleModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Your Workout Plan</h5>
@@ -456,7 +461,7 @@
                         <span class="badge me-2" id="rationaleFocus" style="background:linear-gradient(135deg,#22c55e,#16a34a);">Focus</span>
                         <span class="badge" id="rationaleDuration" style="background:#2a2a2a;border:1px solid #22c55e;color:#22c55e;">Duration</span>
                     </div>
-                    <p id="rationaleText" class="mb-0"></p>
+                    <div id="rationaleText"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="startCoachWorkoutBtn" class="btn btn-primary w-100">Let's Go! 💪</button>
@@ -655,6 +660,29 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- PWA Install Banner -->
+    <div id="installBanner" class="install-banner" style="display:none;">
+        <div class="install-banner-content">
+            <div class="install-banner-icon">
+                <i class="bi bi-phone"></i>
+            </div>
+            <div class="install-banner-text">
+                <div class="install-banner-title">Add to Home Screen</div>
+                <div class="install-banner-subtitle">Track workouts faster — works offline too</div>
+            </div>
+            <div class="install-banner-actions">
+                <button class="install-btn-dismiss" onclick="dismissInstallBanner()">Not now</button>
+                <button class="install-btn-add" id="installAddBtn" onclick="triggerInstall()">Install</button>
+            </div>
+        </div>
+        <!-- iOS step-by-step instructions (shown when tapping Install on iOS) -->
+        <div id="iosInstallInstructions" class="ios-install-instructions" style="display:none;">
+            <div class="ios-step"><span class="ios-step-num">1</span> Tap the <strong>Share</strong> button <i class="bi bi-box-arrow-up"></i> at the bottom of Safari</div>
+            <div class="ios-step"><span class="ios-step-num">2</span> Scroll down and tap <strong>"Add to Home Screen"</strong></div>
+            <div class="ios-step"><span class="ios-step-num">3</span> Tap <strong>"Add"</strong> in the top-right corner</div>
         </div>
     </div>
 
