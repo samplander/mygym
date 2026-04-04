@@ -105,3 +105,5 @@ The app already has real utility and strong product signal, but it still needs a
 - Manual testing passed
 - Old backups still import successfully
 - Exercise propagation has been elevated into a formal work item and decision
+- P1 Phase 1 + 2 were implemented using a new `exercise-identity.js` helper module plus app wiring changes
+- Phase 1 + 2 were reviewed after implementation and then passed manual testing

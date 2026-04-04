@@ -28,8 +28,8 @@ Use one or more:
 
 ### Define and implement exercise identity + propagation model
 - Tags: `code` `product` `ux`
-- Status: open
-- Notes: library edits should propagate across active workouts, workout history, exercise history, and reporting; move away from fragile name-only matching toward stable exercise identity
+- Status: in progress
+- Notes: implementation plan prepared in `docs/P1_EXERCISE_PROPAGATION_PLAN.md`; Phase 1 + 2 implemented with `exerciseLibraryId`, identity helpers, and propagation into active workout/history. Manual testing passed; later phases still pending.
 
 ### Create first code-readiness assessment
 - Tags: `code`

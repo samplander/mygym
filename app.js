@@ -160,7 +160,7 @@ function generateHeatmapData() {
         
         dayWorkouts.forEach(workout => {
             workout.exercises.forEach(exercise => {
-                const category = getCategoryForExercise(exercise.name);
+                const category = getCategoryForExercise(exercise);
                 exercise.sets.forEach(set => {
                     const volume = (set.actual?.weight || 0) * (set.actual?.reps || 0);
                     totalVolume += volume;
@@ -583,7 +583,7 @@ function completeWorkout() {
 
 function saveToHistory() {
     const history = loadWorkoutHistory();
-    history.unshift(currentWorkout);
+    history.unshift(MyGymExerciseIdentity.normalizeWorkout(currentWorkout, loadExerciseLibrary()));
     
     // Keep only last 100 workouts to manage storage
     if (history.length > 100) {
@@ -616,25 +616,32 @@ function saveExercise() {
     if (addToLibraryContainer.style.display !== 'none' && addToLibraryCheckbox.checked) {
         // Add the exercise to the library if it doesn't exist
         const library = loadExerciseLibrary();
-        const existingExercise = library.find(ex => ex.name.toLowerCase() === name.toLowerCase());
+        const existingExercise = MyGymExerciseIdentity.findLibraryExerciseByName(library, name);
         
         if (!existingExercise) {
             addExerciseToLibrary(name, categorySelect.value);
         }
     }
     
+    const library = loadExerciseLibrary();
+    const libraryExercise = MyGymExerciseIdentity.findLibraryExerciseByName(library, name);
+
     // Update usage stats if selecting from library
-    updateExerciseUsage(name);
-    
-    const exercise = {
-        id: Date.now(),
-        name: name,
-        collapsed: false,
-        detailsHidden: false,
-        timeMode: false,
-        showPrevious: false,
-        sets: []
-    };
+    updateExerciseUsage(name, libraryExercise?.id);
+
+    const exercise = libraryExercise
+        ? MyGymExerciseIdentity.createWorkoutExerciseFromLibrary(libraryExercise, { id: Date.now() })
+        : {
+            id: Date.now(),
+            name: name,
+            category: '',
+            exerciseLibraryId: null,
+            collapsed: false,
+            detailsHidden: false,
+            timeMode: false,
+            showPrevious: false,
+            sets: []
+        };
     
     // In accordion mode, collapse all others and open new one
     if (currentWorkout.accordionMode) {
@@ -915,7 +922,7 @@ function renderExercises() {
                     <button class="toggle-time-btn" onclick="event.stopPropagation(); toggleTimeMode(${exercise.id})" title="${exercise.timeMode ? 'Switch to Reps' : 'Switch to Time'}">
                         <i class="bi bi-${exercise.timeMode ? '123' : 'stopwatch'}"></i>
                     </button>
-                    <button class="exercise-history-btn" onclick="event.stopPropagation(); showExerciseHistory('${exercise.name.replace(/'/g, "\\'")}')" title="View exercise history">
+                    <button class="exercise-history-btn" onclick="event.stopPropagation(); showCurrentWorkoutExerciseHistory(${exercise.id})" title="View exercise history">
                         <i class="bi bi-graph-up"></i>
                     </button>
                     <button class="delete-exercise-btn" onclick="event.stopPropagation(); deleteExercise(${exercise.id})">
@@ -943,13 +950,14 @@ function swapExercise(exerciseId) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
 
-    //get category of exercise
     const library = loadExerciseLibrary();
-    const exerciseInLibrary = library.find(ex => ex.name.toLowerCase() === exercise.name.toLowerCase());
-    const category = exerciseInLibrary ? exerciseInLibrary.category : null;
+    const exerciseInLibrary = MyGymExerciseIdentity.resolveExerciseReference(exercise, library);
+    const category = exercise.category || exerciseInLibrary?.category || null;
 
     // Filter library for exercises in the same category (or all if no category)
-    const candidates = category ? library.filter(ex => ex.category === category && ex.name.toLowerCase() !== exercise.name.toLowerCase()) : library.filter(ex => ex.name.toLowerCase() !== exercise.name.toLowerCase());
+    const candidates = category
+        ? library.filter(ex => ex.category === category && !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }))
+        : library.filter(ex => !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }));
     if (candidates.length === 0) {
         alert('No alternative exercises available in the library to swap with!');
         return;
@@ -965,24 +973,29 @@ function renderSwapOptions(exerciseId) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
 
-        //get category of exercise
     const library = loadExerciseLibrary();
-    const exerciseInLibrary = library.find(ex => ex.name.toLowerCase() === exercise.name.toLowerCase());
-    const category = exerciseInLibrary ? exerciseInLibrary.category : null;
-    const candidates = category ? library.filter(ex => ex.category === category && ex.name.toLowerCase() !== exercise.name.toLowerCase()) : library.filter(ex => ex.name.toLowerCase() !== exercise.name.toLowerCase());
+    const exerciseInLibrary = MyGymExerciseIdentity.resolveExerciseReference(exercise, library);
+    const category = exercise.category || exerciseInLibrary?.category || null;
+    const candidates = category
+        ? library.filter(ex => ex.category === category && !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }))
+        : library.filter(ex => !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }));
 
     const container = document.getElementById('swapOptionsContainer');
     container.innerHTML = candidates.map(candidate => `
-        <div class="swap-option" onclick="performSwap(${exerciseId}, '${candidate.name.replace(/'/g, "\\'")}')">
+        <div class="swap-option" onclick="performSwap(${exerciseId}, ${candidate.id})">
             <h6>${candidate.name}</h6>
         </div>
     `).join('');
 }
 
-function performSwap(exerciseId, newName) {
+function performSwap(exerciseId, libraryExerciseId) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
-    exercise.name = newName;
+    const libraryExercise = MyGymExerciseIdentity.findLibraryExerciseById(loadExerciseLibrary(), libraryExerciseId);
+    if (!libraryExercise) return;
+    exercise.name = libraryExercise.name;
+    exercise.category = libraryExercise.category || '';
+    exercise.exerciseLibraryId = libraryExercise.id;
     saveCurrentWorkout();
     renderExercises();
     const swapExerciseModal = bootstrap.Modal.getInstance(document.getElementById('swapExerciseModal'));
@@ -1104,6 +1117,8 @@ function pad(num) {
 
 // LocalStorage
 function saveCurrentWorkout() {
+    const library = loadExerciseLibrary();
+    currentWorkout = MyGymExerciseIdentity.normalizeWorkout(currentWorkout, library);
     MyGymStorage.saveCurrentWorkout(currentWorkout);
 }
 
@@ -1117,14 +1132,17 @@ function loadCurrentWorkout() {
         // Default to accordion mode if property doesn't exist (backwards compatibility)
         currentWorkout.accordionMode = true;
     }
+    if (currentWorkout) {
+        currentWorkout = MyGymExerciseIdentity.normalizeWorkout(currentWorkout, loadExerciseLibrary());
+    }
 }
 
 function loadWorkoutHistory() {
-    return MyGymStorage.loadWorkoutHistory([]);
+    return MyGymExerciseIdentity.normalizeWorkoutHistory(MyGymStorage.loadWorkoutHistory([]), loadExerciseLibrary());
 }
 
 function saveWorkoutHistory(history) {
-    return MyGymStorage.saveWorkoutHistory(history, []);
+    return MyGymStorage.saveWorkoutHistory(MyGymExerciseIdentity.normalizeWorkoutHistory(history, loadExerciseLibrary()), []);
 }
 
 function clearWorkoutHistory() {
@@ -1424,10 +1442,11 @@ function calculateExerciseStats(exercise) {
 function getExerciseHistory(exerciseName) {
     const history = loadWorkoutHistory();
     const exerciseHistory = [];
+    const reference = typeof exerciseName === 'string' ? { name: exerciseName } : exerciseName;
     
     // Filter workouts that contain this exercise and extract sets
     history.forEach(workout => {
-        const exercise = workout.exercises.find(ex => ex.name === exerciseName);
+        const exercise = workout.exercises.find(ex => MyGymExerciseIdentity.matchesExerciseReference(ex, reference));
         if (exercise && exercise.sets.length > 0) {
             exerciseHistory.push({
                 workoutDate: new Date(workout.completedAt),
@@ -1453,7 +1472,7 @@ function showExerciseHistory(exerciseName) {
     const titleEl = document.getElementById('exerciseHistoryTitle');
     const bodyEl = document.getElementById('exerciseHistoryBody');
     
-    titleEl.textContent = exerciseName;
+    titleEl.textContent = typeof exerciseName === 'string' ? exerciseName : exerciseName?.name || 'Exercise History';
     
     if (history.length === 0) {
         bodyEl.innerHTML = `
@@ -1530,6 +1549,12 @@ function showExerciseHistory(exerciseName) {
     modal.show();
 }
 
+function showCurrentWorkoutExerciseHistory(exerciseId) {
+    const exercise = currentWorkout?.exercises?.find(ex => ex.id === exerciseId);
+    if (!exercise) return;
+    showExerciseHistory(exercise);
+}
+
 function getSetStatus(set) {
     // Simplified: just check if completed (removed planned comparison)
     const actualVol = set.actual.weight * set.actual.reps;
@@ -1603,6 +1628,8 @@ function useAsTemplate(workoutId) {
         exercises: workout.exercises.map(exercise => ({
             id: Date.now() + Math.random(),
             name: exercise.name,
+            category: exercise.category || '',
+            exerciseLibraryId: exercise.exerciseLibraryId ?? null,
             collapsed: false,
             detailsHidden: false,
             selectedSetIndex: 0,
@@ -1740,8 +1767,24 @@ function saveExerciseLibraryItem() {
         // Update existing
         const index = library.findIndex(ex => ex.id == id);
         if (index !== -1) {
+            const previousExercise = { ...library[index] };
             library[index].name = name;
             library[index].category = category;
+            saveExerciseLibrary(library);
+            const propagationResult = MyGymExerciseIdentity.propagateExerciseLibraryChange({
+                libraryExerciseId: library[index].id,
+                oldName: previousExercise.name,
+                newName: name,
+                newCategory: category
+            });
+            currentWorkout = MyGymStorage.loadCurrentWorkout();
+            if (currentWorkout) {
+                currentWorkout = MyGymExerciseIdentity.normalizeWorkout(currentWorkout, loadExerciseLibrary());
+            }
+            if (!document.getElementById('workoutScreen').classList.contains('d-none')) {
+                renderExercises();
+            }
+            console.info('Exercise propagation result:', propagationResult);
         }
     } else {
         // Create new
@@ -1755,7 +1798,9 @@ function saveExerciseLibraryItem() {
         });
     }
     
-    saveExerciseLibrary(library);
+    if (!id) {
+        saveExerciseLibrary(library);
+    }
     renderExerciseLibrary();
     
     // Close modal
@@ -1956,9 +2001,11 @@ function formatLastUsed(lastUsedDate) {
 }
 
 // Update exercise usage when adding to workout
-function updateExerciseUsage(exerciseName) {
+function updateExerciseUsage(exerciseName, exerciseLibraryId = null) {
     const library = loadExerciseLibrary();
-    const exercise = library.find(ex => ex.name.toLowerCase() === exerciseName.toLowerCase());
+    const exercise = exerciseLibraryId != null
+        ? MyGymExerciseIdentity.findLibraryExerciseById(library, exerciseLibraryId)
+        : MyGymExerciseIdentity.findLibraryExerciseByName(library, exerciseName);
     
     if (exercise) {
         exercise.usageCount = (exercise.usageCount || 0) + 1;
@@ -1972,7 +2019,7 @@ function addExerciseToLibrary(name, category = '') {
     const library = loadExerciseLibrary();
     
     // Check if already exists
-    const exists = library.find(ex => ex.name.toLowerCase() === name.toLowerCase());
+    const exists = MyGymExerciseIdentity.findLibraryExerciseByName(library, name);
     if (exists) return;
     
     library.push({
@@ -2845,8 +2892,14 @@ function getCategoryBreakdownModal() {
 }
 
 function getCategoryForExercise(exerciseName) {
+    if (exerciseName && typeof exerciseName === 'object') {
+        const library = loadExerciseLibrary();
+        const exercise = MyGymExerciseIdentity.resolveExerciseReference(exerciseName, library);
+        return exercise?.category || exerciseName.category || 'Uncategorized';
+    }
+
     const library = loadExerciseLibrary();
-    const exercise = library.find(ex => ex.name.toLowerCase() === exerciseName.toLowerCase());
+    const exercise = MyGymExerciseIdentity.findLibraryExerciseByName(library, exerciseName);
     return exercise?.category || 'Uncategorized';
 }
 
@@ -2868,7 +2921,7 @@ function calculateCategoryBreakdown(startDate, endDate) {
         workoutCount++;
         
         workout.exercises?.forEach(exercise => {
-            const category = getCategoryForExercise(exercise.name);
+            const category = getCategoryForExercise(exercise);
             
             exercise.sets?.forEach(set => {
                 // Only count completed sets
