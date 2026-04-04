@@ -96,7 +96,7 @@ function initializeApp() {
 
 // Quick Stats Rendering
 function renderQuickStats() {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     const statsContainer = document.getElementById('quickStats');
     
     if (history.length === 0) {
@@ -134,7 +134,7 @@ function renderQuickStats() {
 
 // Volume Heatmap Rendering
 function generateHeatmapData() {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     const heatmapData = [];
     const today = new Date();
     
@@ -379,9 +379,9 @@ async function generateCoachWorkout(customPreferences = null) {
         coachBtnIcon.className = 'bi bi-arrow-clockwise spin';
         
         // Gather localStorage data
-        const workoutHistory = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
-        const exerciseLibrary = JSON.parse(localStorage.getItem('exerciseLibrary') || '[]');
-        const categoryConfig = JSON.parse(localStorage.getItem('categoryConfig') || '[]');
+        const workoutHistory = loadWorkoutHistory();
+        const exerciseLibrary = loadExerciseLibrary();
+        const categoryConfig = loadCategoryConfig();
         
         // Build preferences (use custom or defaults)
         const preferences = customPreferences || {
@@ -473,7 +473,7 @@ function handleCoachResponse(data) {
     
     // Update exercise library if coach added new exercises
     if (exerciseLibrary !== null && exerciseLibrary !== undefined) {
-        localStorage.setItem('exerciseLibrary', JSON.stringify(exerciseLibrary));
+        saveExerciseLibrary(exerciseLibrary);
     }
     
     // Show rationale modal before entering workout
@@ -569,7 +569,7 @@ function completeWorkout() {
         
         // Clear current workout
         currentWorkout = null;
-        localStorage.removeItem('currentWorkout');
+        clearCurrentWorkout();
         
         // Stop timer
         stopTimer();
@@ -582,7 +582,7 @@ function completeWorkout() {
 }
 
 function saveToHistory() {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     history.unshift(currentWorkout);
     
     // Keep only last 100 workouts to manage storage
@@ -590,7 +590,7 @@ function saveToHistory() {
         history.splice(100);
     }
     
-    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    saveWorkoutHistory(history);
 }
 
 // Exercise Management
@@ -1104,24 +1104,37 @@ function pad(num) {
 
 // LocalStorage
 function saveCurrentWorkout() {
-    localStorage.setItem('currentWorkout', JSON.stringify(currentWorkout));
+    MyGymStorage.saveCurrentWorkout(currentWorkout);
+}
+
+function clearCurrentWorkout() {
+    MyGymStorage.clearCurrentWorkout();
 }
 
 function loadCurrentWorkout() {
-    const saved = localStorage.getItem('currentWorkout');
-    if (saved) {
-        currentWorkout = JSON.parse(saved);
+    currentWorkout = MyGymStorage.loadCurrentWorkout();
+    if (currentWorkout && currentWorkout.accordionMode === undefined) {
         // Default to accordion mode if property doesn't exist (backwards compatibility)
-        if (currentWorkout.accordionMode === undefined) {
-            currentWorkout.accordionMode = true;
-        }
+        currentWorkout.accordionMode = true;
     }
+}
+
+function loadWorkoutHistory() {
+    return MyGymStorage.loadWorkoutHistory([]);
+}
+
+function saveWorkoutHistory(history) {
+    return MyGymStorage.saveWorkoutHistory(history, []);
+}
+
+function clearWorkoutHistory() {
+    return MyGymStorage.clearWorkoutHistory();
 }
 
 // History Management
 function renderHistory() {
     const container = document.getElementById('historyContent');
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     
     if (history.length === 0) {
         container.innerHTML = `
@@ -1175,7 +1188,7 @@ function formatDuration(seconds) {
 }
 
 function viewWorkoutDetail(workoutId) {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     const workout = history.find(w => w.id === workoutId);
     
     if (!workout) return;
@@ -1409,7 +1422,7 @@ function calculateExerciseStats(exercise) {
 
 // Exercise History Functions
 function getExerciseHistory(exerciseName) {
-    const history = JSON.parse(localStorage.getItem('workoutHistory')) || [];
+    const history = loadWorkoutHistory();
     const exerciseHistory = [];
     
     // Filter workouts that contain this exercise and extract sets
@@ -1564,21 +1577,21 @@ function toggleDetailExercise(exerciseId) {
 function deleteWorkout(workoutId) {
     if (!confirm('Delete this workout from history?')) return;
     
-    let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    let history = loadWorkoutHistory();
     history = history.filter(w => w.id !== workoutId);
-    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    saveWorkoutHistory(history);
     renderHistory();
 }
 
 function clearAllHistory() {
     if (!confirm('Delete ALL workout history? This cannot be undone!')) return;
     
-    localStorage.removeItem('workoutHistory');
+    clearWorkoutHistory();
     renderHistory();
 }
 
 function useAsTemplate(workoutId) {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     const workout = history.find(w => w.id === workoutId);
     
     if (!workout) return;
@@ -1610,12 +1623,11 @@ function useAsTemplate(workoutId) {
 // ===== EXERCISE LIBRARY MANAGEMENT =====
 
 function loadExerciseLibrary() {
-    const library = localStorage.getItem('exerciseLibrary');
-    return library ? JSON.parse(library) : getDefaultExercises();
+    return MyGymStorage.loadExerciseLibrary(getDefaultExercises());
 }
 
 function saveExerciseLibrary(library) {
-    localStorage.setItem('exerciseLibrary', JSON.stringify(library));
+    return MyGymStorage.saveExerciseLibrary(library, getDefaultExercises());
 }
 
 function getDefaultExercises() {
@@ -2058,7 +2070,7 @@ function renderDataBrowserContent() {
 }
 
 function renderHistoryList(container) {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     
     if (history.length === 0) {
         container.innerHTML = `
@@ -2102,7 +2114,7 @@ function selectWorkoutToEdit(workoutId) {
 }
 
 function renderExercisesList(container) {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     const workout = history.find(w => w.id === dataBrowserState.workoutId);
     
     if (!workout || !workout.exercises?.length) {
@@ -2139,7 +2151,7 @@ function selectExerciseToEdit(exerciseIndex) {
 }
 
 function renderSetsList(container) {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     const workout = history.find(w => w.id === dataBrowserState.workoutId);
     const exercise = workout?.exercises?.[dataBrowserState.exerciseIndex];
     
@@ -2173,7 +2185,7 @@ function renderSetsList(container) {
 }
 
 function openSetEditor(setIndex) {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     const workout = history.find(w => w.id === dataBrowserState.workoutId);
     const exercise = workout?.exercises?.[dataBrowserState.exerciseIndex];
     const set = exercise?.sets?.[setIndex];
@@ -2236,7 +2248,7 @@ function openSetEditor(setIndex) {
 function saveRecordChanges() {
     const setIndex = parseInt(document.getElementById('editSetIndex').value);
     
-    let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    let history = loadWorkoutHistory();
     const workoutIdx = history.findIndex(w => w.id === dataBrowserState.workoutId);
     
     if (workoutIdx === -1) return;
@@ -2261,7 +2273,7 @@ function saveRecordChanges() {
     
     set.completed = document.getElementById('editSetCompleted').checked;
     
-    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    saveWorkoutHistory(history);
     
     getRecordEditorModal().hide();
     renderDataBrowserContent();
@@ -2468,7 +2480,7 @@ function saveCurrentWorkoutChanges() {
 function deleteHistoryItem(workoutId) {
     if (!confirm('Delete this workout from history?')) return;
     
-    let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    let history = loadWorkoutHistory();
     const idx = history.findIndex(w => w.id === workoutId);
     if (idx === -1) {
         alert('Workout not found — it may have already been deleted.');
@@ -2476,7 +2488,7 @@ function deleteHistoryItem(workoutId) {
         return;
     }
     history.splice(idx, 1);
-    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    saveWorkoutHistory(history);
     
     renderDataBrowserContent();
 }
@@ -2484,13 +2496,13 @@ function deleteHistoryItem(workoutId) {
 function deleteHistoryExercise(exerciseIndex) {
     if (!confirm('Delete this exercise and all its sets?')) return;
     
-    let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    let history = loadWorkoutHistory();
     const workoutIdx = history.findIndex(w => w.id === dataBrowserState.workoutId);
     
     if (workoutIdx === -1) return;
     
     history[workoutIdx].exercises.splice(exerciseIndex, 1);
-    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    saveWorkoutHistory(history);
     
     renderDataBrowserContent();
 }
@@ -2498,7 +2510,7 @@ function deleteHistoryExercise(exerciseIndex) {
 function deleteHistorySet(setIndex) {
     if (!confirm('Delete this set?')) return;
     
-    let history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    let history = loadWorkoutHistory();
     const workoutIdx = history.findIndex(w => w.id === dataBrowserState.workoutId);
     
     if (workoutIdx === -1) return;
@@ -2520,7 +2532,7 @@ function deleteHistorySet(setIndex) {
     }
     
     exercise.sets.splice(setIndex, 1);
-    localStorage.setItem('workoutHistory', JSON.stringify(history));
+    saveWorkoutHistory(history);
     
     getRecordEditorModal().hide();
     renderDataBrowserContent();
@@ -2532,9 +2544,10 @@ function exportAllData() {
     const data = {
         exportDate: new Date().toISOString(),
         version: '1.0',
-        currentWorkout: JSON.parse(localStorage.getItem('currentWorkout') || 'null'),
-        workoutHistory: JSON.parse(localStorage.getItem('workoutHistory') || '[]'),
-        exerciseLibrary: JSON.parse(localStorage.getItem('exerciseLibrary') || '[]')
+        currentWorkout: MyGymStorage.loadCurrentWorkout(),
+        workoutHistory: loadWorkoutHistory(),
+        exerciseLibrary: loadExerciseLibrary(),
+        categoryConfig: loadCategoryConfig()
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -2563,7 +2576,7 @@ function importData(event) {
             const data = JSON.parse(e.target.result);
             
             // Validate structure
-            if (!data.workoutHistory && !data.exerciseLibrary && !data.currentWorkout) {
+            if (!data.workoutHistory && !data.exerciseLibrary && !data.currentWorkout && !data.categoryConfig) {
                 alert('Invalid backup file: missing data keys');
                 return;
             }
@@ -2583,18 +2596,21 @@ function importData(event) {
                     seenIds.add(id);
                     return { ...w, id };
                 });
-                localStorage.setItem('workoutHistory', JSON.stringify(sanitised));
+                saveWorkoutHistory(sanitised);
             }
             if (data.exerciseLibrary) {
-                localStorage.setItem('exerciseLibrary', JSON.stringify(data.exerciseLibrary));
+                saveExerciseLibrary(data.exerciseLibrary);
+            }
+            if (data.categoryConfig) {
+                saveCategoryConfig(data.categoryConfig);
             }
             if (data.currentWorkout !== undefined) {
                 if (data.currentWorkout === null) {
-                    localStorage.removeItem('currentWorkout');
+                    clearCurrentWorkout();
                     currentWorkout = null;
                 } else {
-                    localStorage.setItem('currentWorkout', JSON.stringify(data.currentWorkout));
                     currentWorkout = data.currentWorkout;
+                    saveCurrentWorkout();
                 }
             }
             
@@ -2637,15 +2653,11 @@ const COLOR_PRESETS = [
 ];
 
 function loadCategoryConfig() {
-    const stored = localStorage.getItem('categoryConfig');
-    if (stored) {
-        return JSON.parse(stored);
-    }
-    return [...DEFAULT_CATEGORIES];
+    return MyGymStorage.loadCategoryConfig(DEFAULT_CATEGORIES);
 }
 
 function saveCategoryConfig(categories) {
-    localStorage.setItem('categoryConfig', JSON.stringify(categories));
+    return MyGymStorage.saveCategoryConfig(categories, DEFAULT_CATEGORIES);
 }
 
 function getCategoryColor(categoryName) {
@@ -2839,7 +2851,7 @@ function getCategoryForExercise(exerciseName) {
 }
 
 function calculateCategoryBreakdown(startDate, endDate) {
-    const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+    const history = loadWorkoutHistory();
     const categories = {};
     let totalVolume = 0;
     let workoutCount = 0;
