@@ -5,6 +5,9 @@
 - Website: https://rep-etition.co.za/
 - Branch for active work: `dev`
 - Status: Active build + go-to-market preparation
+- Active developer workflow: `docs/DEV_WORKFLOW.md`
+- Raw input inbox: Apple Notes
+- Obsidian: deprecated for active developer workflow
 
 ## Current intent
 China wrote this app and wants to:
@@ -66,7 +69,7 @@ These are intentionally being tracked for later, not blocked now.
 6. What is the current stack?
 7. Is it live anywhere besides the site?
 8. What state is the code in today?
-9. Where does the GymApp Features note live?
+9. How much of the earlier idea bank should stay as reference versus be promoted into active roadmap work?
 10. What implementation / review cadence should we use?
 
 ## Operating principle

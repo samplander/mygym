@@ -58,6 +58,15 @@ This keeps implementation practical without requiring a full UI rewrite.
 6. Add a manual `propagate / update all history` action for legacy cleanup
 7. Add legacy reconciliation logic for imported history without IDs
 
+## Current checkpoint
+- Phase 1 foundation has been implemented.
+- Phase 2 propagation engine has been implemented.
+- Phase 3 reporting / lookup hardening has been implemented.
+- Phase 4 manual legacy repair / propagate-all-history flow is also implemented and exposed in the app as `Repair / Update All History`.
+- Manual testing passed for the implemented propagation work.
+- A full end-to-end test has now also passed.
+- The main remaining planned work in this stream is Phase 5 cleanup / guardrails plus any edge-case fixes discovered during real use.
+
 ### Out of scope
 - cloud sync
 - multi-user merge resolution

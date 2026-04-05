@@ -1,5 +1,8 @@
 # Go-To-Market (GTM)
 
+This doc is for market-facing thinking, not active engineering execution.
+Use it for positioning, messaging, launch strategy, and adoption questions.
+
 ## Current framing
 This document tracks positioning, target users, messaging, launch strategy, and go-to-market risks for MyGym / repEtition.
 

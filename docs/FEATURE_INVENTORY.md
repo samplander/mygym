@@ -1,50 +1,71 @@
 # Feature Inventory
 
-This file is the structured home for feature understanding.
-It should eventually reflect both the existing app and the separate GymApp Features note.
+This file is the broad feature bank for MyGym.
 
-## Known features from the current website
+Use it for:
+- stable understanding of what the app already does
+- grouped feature areas
+- notable imported ideas worth keeping in the project memory
+
+Do not use it as the main active execution tracker.
+Actionable current work should live in `BACKLOG.md`.
+Large active changes can have plans in `docs/IMPLEMENTATION_PLANS/`.
+
+## Current known product surface
 - AI Coach workout generation
-- start blank workout
-- customize coach
+- blank workout mode
+- coach customization
 - workout history
 - templates / quick start
 - live exercise swap
 - custom exercise library
 - per-exercise history
 - local-first storage
-- export and backup
+- export / backup
 - offline-capable experience
 - stats
 
-## Feature categories
-### Core workout execution
+## Core feature areas
+### Workout execution
 - start workout
 - log sets
 - add exercise
 - complete workout
+- continue current workout
+- reorder exercises during workout
+- compare previous workout with current
 
 ### Programming / intelligence
 - AI coach
 - coach preferences
 - adaptive recommendations
+- workout generation from goals / user inputs
+- progression logic ideas
+- rationale / notes for generated workouts
 
-### Data / library
+### Data / library / history
 - exercise library
 - categories
-- history
+- workout history
+- exercise history
 - stats
-- export / import
+- import / export
+- repair / update-all-history flow
 
 ### UX / onboarding
 - first-run clarity
 - navigation
 - terminology
 - settings
+- install flow on Android & iOS
+- active workout focus improvements
 
-## Imported from Apple Notes
-### Bugs / fixes
+## Imported idea bank from earlier notes
+These are preserved as a structured idea bank, not a committed roadmap.
+
+### Confirmed important fixes / learnings
 - Edit exercise should update history as well
+- Rename exercise across history and current workout
 
 ### Workout execution / UX ideas
 - Swap should show previous sets and weights for reuse
@@ -55,9 +76,6 @@ It should eventually reflect both the existing app and the separate GymApp Featu
 - Change time icon to `00:00`
 - Set exercises per workout
 - Reset clock during workout
-- Continue current workout
-- Reorder cards during workout
-- Rename exercise across history and current workout
 - Down/up arrow slide to show/hide header/footer
 - Auto-hide exercise details on collapse / improve active workout focus
 - One-click complete, second click reveals delete confirmation
@@ -67,7 +85,6 @@ It should eventually reflect both the existing app and the separate GymApp Featu
 - Remove planned values app-wide
 - Copy from previous set
 - Use template while keeping planned values
-- Compare previous workout with current
 
 ### AI / intelligence ideas
 - Free AI workout URL to create a plan
@@ -80,24 +97,21 @@ It should eventually reflect both the existing app and the separate GymApp Featu
 - Automatic progression logic on successful lifts
 
 ### Tracking / analytics / progression ideas
-- Track mesocycle
-- Track long-term memory, e.g. 8-week mesocycle
+- Track mesocycle / longer-term blocks
 - Current volume per completed set
 - Git-like workout frequency visual
 - General performance stats
-- Set/rest timer
+- Set / rest timer
 - Body-part workout breakdown
 - More detail on last time exercise was used
 - Track 8-week / duration-based progression blocks
 
-### Platform / data / system ideas
+### Platform / system ideas
 - Import workout JSON
-- Install flow made easy on Android & iOS
 - Exercise default type, e.g. time or sets
 - Color-dot workout groups
-- Export & import
 
-### Larger / epic ideas
+### Larger / later ideas
 - Weight management
 - Food tracking with good/bad day history
 - Integrate: skaal
@@ -106,8 +120,7 @@ It should eventually reflect both the existing app and the separate GymApp Featu
 - Gym trainer
 - Alternatives if gym is busy, with workout difficulty / volume adjustments
 
-## To add later
-- feature status (live / partial / planned / needs redesign)
-- user value of each feature
-- complexity / implementation notes
-- deduplicated and prioritized roadmap version of the imported note
+## Notes
+- This doc is intentionally broad.
+- If an idea becomes active and actionable, promote it into `BACKLOG.md`.
+- If a large change needs structure before coding, create a plan in `docs/IMPLEMENTATION_PLANS/`.

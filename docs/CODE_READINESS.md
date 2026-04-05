@@ -21,7 +21,10 @@ This document is for assessing whether the app is robust enough for broader usag
 - Initial technical review completed on 2026-04-04.
 - App is promising and genuinely usable, but still prototype-to-early-product grade rather than relaxed-beta grade.
 - P0 safe storage layer has been implemented and manually verified.
-- Exercise identity / propagation is now identified as a top trust-critical follow-up issue.
+- Core P1 exercise identity / propagation work is implemented.
+- Reporting / lookup hardening is in place.
+- The manual history propagation / repair flow is also present in the app and has been used successfully.
+- Manual testing plus a full end-to-end pass both succeeded, which materially improves confidence in the trust-critical data flows.
 
 ## Current architecture snapshot
 - Frontend is a lightweight PWA with `index.html`, `styles.css`, `app.js`, `storage.js`, and `sw.js`
@@ -38,12 +41,12 @@ This document is for assessing whether the app is robust enough for broader usag
 - Recommended fix: continue extracting domain modules after trust-critical fixes, starting with exercise identity / library/history concerns
 - Priority: high
 
-### 2) Exercise identity / propagation is a top trust issue
-- Severity: critical
+### 2) Exercise identity / propagation trust issue has improved materially
+- Severity: previously critical, now materially reduced
 - User impact: high
-- Finding: exercise edits do not propagate reliably everywhere because the app uses a fragile hybrid of stored workout snapshots and name-based matching against the exercise library
-- Recommended fix: implement a stable exercise identity model and propagation logic, plus a manual `propagate / update all history` flow for legacy imports
-- Priority: highest
+- Finding: the app previously had inconsistent rename/category propagation because it relied on a hybrid of stored snapshots and name-based matching; the core identity model, propagation logic, reporting hardening, and manual repair flow are now implemented and the end-to-end path has passed testing
+- Recommended fix: keep watching for residual edge cases during normal use and add lightweight regression guardrails so future refactors do not reintroduce trust drift
+- Priority: still important, but no longer a top unresolved blocker
 
 ### 3) Storage safety improved materially
 - Severity: positive improvement / medium residual risk
@@ -95,15 +98,18 @@ This document is for assessing whether the app is robust enough for broader usag
 The app already has real utility and strong product signal, but it still needs a few trust-critical engineering improvements before broader exposure.
 
 ## Recommended priority order
-1. Implement P1 exercise identity + propagation
-2. Continue modular extraction from `app.js` in the same area
-3. Do a readiness polish pass covering config hygiene, analytics, and UX feedback patterns
-4. Pair this with GTM clarity / onboarding review
+1. Continue modular extraction from `app.js` in the same area
+2. Do a readiness polish pass covering config hygiene, analytics, and UX feedback patterns
+3. Pair this with GTM clarity / onboarding review
+4. Add lightweight regression guardrails for trust-critical history and reporting flows
 
 ## Important recent outcomes
 - P0 safe storage layer was implemented in `storage.js`
-- Manual testing passed
+- Manual testing passed (see `docs/CHECKLISTS/SAFE_STORAGE_MANUAL_TESTS.md`)
 - Old backups still import successfully
-- Exercise propagation has been elevated into a formal work item and decision
-- P1 Phase 1 + 2 were implemented using a new `exercise-identity.js` helper module plus app wiring changes
-- Phase 1 + 2 were reviewed after implementation and then passed manual testing
+- Exercise propagation was elevated into a formal work item and decision
+- P1 exercise identity work introduced canonical exercise references plus propagation logic via `exercise-identity.js` and related app wiring changes
+- Active MyGym developer workflow now lives in `DEV_WORKFLOW.md`, with implementation plan artifacts grouped under `docs/IMPLEMENTATION_PLANS/`
+- Reporting and lookup logic now prefer canonical references where available
+- A manual `Repair / Update All History` flow exists in the app and runs reconciliation conservatively against the current exercise library
+- A full end-to-end test has also passed, which materially increases confidence that the trust-critical flows are holding together

@@ -2,6 +2,11 @@
 
 Use this protocol for turning messy inputs into structured project work.
 
+Status: active under Developer Workflow V2 adopted on 2026-04-05.
+
+This protocol sits underneath the higher-level workflow in `DEV_WORKFLOW.md`.
+Apple Notes is the default raw capture inbox. This file explains how raw MyGym inputs get classified and routed once they enter the project workflow.
+
 ## Accepted raw inputs
 - voice-note summaries
 - “save this” messages
