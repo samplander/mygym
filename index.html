@@ -429,6 +429,17 @@
                         <small style="color:#a1a1aa;">The coach will design workouts optimized for this goal</small>
                     </div>
                     <div class="mb-3">
+                        <label for="coachSplitTypeSelect" class="form-label">Split Type</label>
+                        <select id="coachSplitTypeSelect" class="form-select">
+                            <option value="auto" selected>Auto</option>
+                            <option value="full_body">Full Body</option>
+                            <option value="upper_lower">Upper / Lower</option>
+                            <option value="push_pull_legs">Push / Pull / Legs</option>
+                            <option value="body_part">Body Part</option>
+                        </select>
+                        <small style="color:#a1a1aa;">Optional. Leave on Auto to keep current coach behavior.</small>
+                    </div>
+                    <div class="mb-3">
                         <label for="timeAvailableInput" class="form-label">Time Available</label>
                         <div class="input-group">
                             <input type="number" id="timeAvailableInput" class="form-control" value="60" min="15" max="180">

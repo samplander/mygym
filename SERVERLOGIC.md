@@ -39,6 +39,7 @@ The Coach API is a Node.js Express server that accepts the app's full localStora
   "categoryConfig": [],
   "preferences": {
     "mode": "progressive_overload",
+    "splitType": "auto",
     "timeAvailable": 60,
     "injuries": "left shoulder sore",
     "notes": "want to focus on back today"
@@ -58,6 +59,7 @@ The Coach API is a Node.js Express server that accepts the app's full localStora
 | Field | Type | Description |
 |-------|------|-------------|
 | `mode` | `string` | Coaching mode: `progressive_overload` (default), `weight_loss`, `strength`, `fitness` |
+| `splitType` | `string` | Optional split bias: `auto` (default), `full_body`, `upper_lower`, `push_pull_legs`, `body_part` |
 | `timeAvailable` | `number` | Available training time in minutes |
 | `injuries` | `string` | Current injuries or soreness to work around |
 | `notes` | `string` | Free-text notes or requests for the session |
