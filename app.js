@@ -2,6 +2,15 @@
 let currentWorkout = null;
 let timerInterval = null;
 
+window.MyGymAppState = {
+    getCurrentWorkout: () => currentWorkout,
+    setCurrentWorkout: (workout) => {
+        currentWorkout = workout;
+        return currentWorkout;
+    },
+    saveCurrentWorkout: () => saveCurrentWorkout()
+};
+
 // Coach API Configuration
 const COACH_API_URL = 'https://mygym-b733e99f8879.herokuapp.com';
 const COACH_API_KEY = '0616851c50ff903bd26b9f57f61f100131337b7ad415f777e695a8c45e4e172f'; // Change this to match your server's API_KEY
@@ -95,219 +104,18 @@ function initializeApp() {
 }
 
 // Quick Stats Rendering
-function renderQuickStats() {
-    const history = loadWorkoutHistory();
-    const statsContainer = document.getElementById('quickStats');
-    
-    if (history.length === 0) {
-        statsContainer.innerHTML = '';
-        return;
-    }
-    
-    // Calculate stats
-    const totalWorkouts = history.length;
-    const lastWorkout = history[0];
-    const daysSinceLastWorkout = Math.floor((Date.now() - new Date(lastWorkout.completedAt).getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Calculate total sets from all workouts
-    const totalSets = history.reduce((sum, workout) => sum + (workout.totalSets || 0), 0);
-    
-    // Handle days display with fallback
-    const daysValue = isNaN(daysSinceLastWorkout) ? 0 : daysSinceLastWorkout;
-    const daysLabel = daysValue === 0 ? 'Today' : (daysValue === 1 ? 'Day Ago' : 'Days Ago');
-    
-    statsContainer.innerHTML = `
-        <div class="stat-card">
-            <span class="stat-value">${totalWorkouts}</span>
-            <span class="stat-label">Workouts</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-value">${totalSets}</span>
-            <span class="stat-label">Total Sets</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-value">${daysValue === 0 ? '0' : daysValue}</span>
-            <span class="stat-label">${daysLabel}</span>
-        </div>
-    `;
-}
+function renderQuickStats() { return MyGymHistoryReporting.renderQuickStats(); }
 
 // Volume Heatmap Rendering
-function generateHeatmapData() {
-    const history = loadWorkoutHistory();
-    const heatmapData = [];
-    const today = new Date();
-    
-    // Generate last 30 days
-    for (let i = 29; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        date.setHours(0, 0, 0, 0);
-        
-        const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-        
-        // Find workouts for this date
-        const dayWorkouts = history.filter(workout => {
-            if (!workout.completedAt) return false;
-            const workoutDate = new Date(workout.completedAt);
-            workoutDate.setHours(0, 0, 0, 0);
-            return workoutDate.toISOString().split('T')[0] === dateStr;
-        });
-        
-        // Calculate total volume and category breakdown for the day
-        let totalVolume = 0;
-        const categoryBreakdown = {};
-        
-        dayWorkouts.forEach(workout => {
-            workout.exercises.forEach(exercise => {
-                const category = getCategoryForExercise(exercise);
-                exercise.sets.forEach(set => {
-                    const volume = (set.actual?.weight || 0) * (set.actual?.reps || 0);
-                    totalVolume += volume;
-                    categoryBreakdown[category] = (categoryBreakdown[category] || 0) + volume;
-                });
-            });
-        });
-        
-        heatmapData.push({
-            date: date,
-            dateStr: dateStr,
-            volume: totalVolume,
-            workoutCount: dayWorkouts.length,
-            categoryBreakdown: categoryBreakdown
-        });
-    }
-    
-    return heatmapData;
-}
+function generateHeatmapData() { return MyGymHistoryReporting.generateHeatmapData(); }
 
-function getVolumeIntensity(volume, maxVolume) {
-    if (volume === 0) return 0;
-    if (maxVolume === 0) return 1;
-    
-    const percentage = (volume / maxVolume) * 100;
-    
-    if (percentage >= 75) return 4; // Highest intensity
-    if (percentage >= 50) return 3;
-    if (percentage >= 25) return 2;
-    return 1; // Lowest intensity (but not zero)
-}
+function getVolumeIntensity(volume, maxVolume) { return MyGymHistoryReporting.getVolumeIntensity(volume, maxVolume); }
 
-function buildCategoryGradient(categoryBreakdown, totalVolume) {
-    if (totalVolume === 0 || Object.keys(categoryBreakdown).length === 0) {
-        return null;
-    }
-    
-    // Sort categories by volume descending
-    const sorted = Object.entries(categoryBreakdown).sort((a, b) => b[1] - a[1]);
-    
-    let gradientParts = [];
-    let currentPercent = 0;
-    
-    sorted.forEach(([category, volume]) => {
-        const percent = (volume / totalVolume) * 100;
-        const color = getCategoryColor(category);
-        const endPercent = currentPercent + percent;
-        
-        gradientParts.push(`${color} ${currentPercent.toFixed(1)}% ${endPercent.toFixed(1)}%`);
-        currentPercent = endPercent;
-    });
-    
-    return `linear-gradient(to right, ${gradientParts.join(', ')})`;
-}
+function buildCategoryGradient(categoryBreakdown, totalVolume) { return MyGymHistoryReporting.buildCategoryGradient(categoryBreakdown, totalVolume); }
 
-function buildCategoryTooltip(categoryBreakdown, totalVolume) {
-    if (totalVolume === 0) return '';
-    
-    const sorted = Object.entries(categoryBreakdown).sort((a, b) => b[1] - a[1]);
-    return sorted.map(([cat, vol]) => {
-        const pct = ((vol / totalVolume) * 100).toFixed(0);
-        return `${cat} ${pct}%`;
-    }).join(', ');
-}
+function buildCategoryTooltip(categoryBreakdown, totalVolume) { return MyGymHistoryReporting.buildCategoryTooltip(categoryBreakdown, totalVolume); }
 
-function renderVolumeHeatmap() {
-    const container = document.getElementById('volumeHeatmap');
-    if (!container) return;
-    
-    const heatmapData = generateHeatmapData();
-    const maxVolume = Math.max(...heatmapData.map(d => d.volume));
-    
-    // Calculate total stats
-    const totalWorkouts = heatmapData.reduce((sum, d) => sum + d.workoutCount, 0);
-    const totalVolume = heatmapData.reduce((sum, d) => sum + d.volume, 0);
-    
-    // Collect unique categories used in the 30-day period
-    const usedCategories = new Set();
-    heatmapData.forEach(day => {
-        Object.keys(day.categoryBreakdown).forEach(cat => usedCategories.add(cat));
-    });
-    
-    // Day labels (M, W, F for compact view)
-    const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    
-    // Build grid HTML
-    let gridHTML = '<div class="heatmap-grid">';
-    
-    heatmapData.forEach((day, index) => {
-        const dayOfWeek = day.date.getDay();
-        const dayLabel = dayLabels[dayOfWeek];
-        const monthDay = day.date.getDate();
-        const isToday = day.dateStr === new Date().toISOString().split('T')[0];
-        
-        // Build tooltip with category breakdown
-        let tooltipText = `${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}\n${formatVolume(day.volume)}`;
-        if (day.workoutCount > 0) {
-            tooltipText += ` (${day.workoutCount} workout${day.workoutCount > 1 ? 's' : ''})`;
-            const catBreakdown = buildCategoryTooltip(day.categoryBreakdown, day.volume);
-            if (catBreakdown) tooltipText += `\n${catBreakdown}`;
-        } else {
-            tooltipText += ' (No workout)';
-        }
-        
-        // Build gradient for workout days
-        const gradient = buildCategoryGradient(day.categoryBreakdown, day.volume);
-        const cellStyle = gradient ? `style="background: ${gradient}"` : '';
-        const cellClass = gradient ? '' : 'heatmap-level-0';
-        
-        gridHTML += `
-            <div class="heatmap-cell ${cellClass} ${isToday ? 'heatmap-today' : ''}"
-                 ${cellStyle}
-                 title="${tooltipText}"
-                 data-volume="${day.volume}"
-                 data-date="${day.dateStr}">
-            </div>
-        `;
-    });
-    
-    gridHTML += '</div>';
-    
-    // Build compact legend for categories used
-    let legendHTML = '';
-    if (usedCategories.size > 0) {
-        const legendItems = Array.from(usedCategories).map(cat => {
-            const color = getCategoryColor(cat);
-            return `<span class="heatmap-legend-item"><span class="heatmap-legend-swatch" style="background:${color}"></span>${cat}</span>`;
-        }).join('');
-        legendHTML = `<div class="heatmap-legend">${legendItems}</div>`;
-    }
-    
-    // Summary stats
-    const summaryHTML = `
-        <div class="heatmap-summary">
-            ${totalWorkouts} workout${totalWorkouts !== 1 ? 's' : ''} • ${formatVolume(totalVolume)}
-        </div>
-    `;
-    
-    container.innerHTML = `
-        <div class="heatmap-header">
-            <h6 class="heatmap-title">Last 30 Days</h6>
-        </div>
-        ${gridHTML}
-        ${legendHTML}
-        ${summaryHTML}
-    `;
-}
+function renderVolumeHeatmap() { return MyGymHistoryReporting.renderVolumeHeatmap(); }
 
 // Screen Management
 function showHomeScreen() {
@@ -951,8 +759,7 @@ function swapExercise(exerciseId) {
     if (!exercise) return;
 
     const library = loadExerciseLibrary();
-    const exerciseInLibrary = MyGymExerciseIdentity.resolveExerciseReference(exercise, library);
-    const category = exercise.category || exerciseInLibrary?.category || null;
+    const category = MyGymExerciseIdentity.resolveExerciseCategory(exercise, library, '');
 
     // Filter library for exercises in the same category (or all if no category)
     const candidates = category
@@ -974,8 +781,7 @@ function renderSwapOptions(exerciseId) {
     if (!exercise) return;
 
     const library = loadExerciseLibrary();
-    const exerciseInLibrary = MyGymExerciseIdentity.resolveExerciseReference(exercise, library);
-    const category = exercise.category || exerciseInLibrary?.category || null;
+    const category = MyGymExerciseIdentity.resolveExerciseCategory(exercise, library, '');
     const candidates = category
         ? library.filter(ex => ex.category === category && !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }))
         : library.filter(ex => !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }));
@@ -1150,909 +956,126 @@ function clearWorkoutHistory() {
 }
 
 // History Management
-function renderHistory() {
-    const container = document.getElementById('historyContent');
-    const history = loadWorkoutHistory();
-    
-    if (history.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="bi bi-graph-up"></i>
-                <p>No Workouts Yet</p>
-                <p class="text-muted">Complete your first workout<br>to see it here!</p>
-                <button class="btn btn-primary mt-3" onclick="showHomeScreen()">
-                    <i class="bi bi-play-circle"></i> Start Workout
-                </button>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = history.map((workout, index) => {
-        const date = new Date(workout.startTime);
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        const durationStr = formatDuration(workout.duration || 0);
-        const exerciseNames = workout.exercises.map(ex => ex.name).join(', ');
-        const exercisePreview = exerciseNames.length > 40 ? exerciseNames.substring(0, 37) + '...' : exerciseNames;
-        
-        return `
-            <div class="history-card" onclick="viewWorkoutDetail(${workout.id})">
-                <div class="history-card-header">
-                    <div class="history-date">${dateStr}</div>
-                    <div class="history-duration">
-                        <i class="bi bi-stopwatch"></i> ${durationStr}
-                    </div>
-                </div>
-                <div class="history-stats">
-                    ${workout.totalExercises || workout.exercises.length} exercises • ${workout.totalSets || 0} sets
-                </div>
-                <div class="history-exercises">${exercisePreview}</div>
-                <div class="history-time">${timeStr}</div>
-            </div>
-        `;
-    }).join('');
-}
+function renderHistory() { return MyGymHistoryReporting.renderHistory(); }
 
-function formatDuration(seconds) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-        return `${hours}:${pad(minutes)}:${pad(secs)}`;
-    }
-    return `${minutes}:${pad(secs)}`;
-}
+function formatDuration(seconds) { return MyGymHistoryReporting.formatDuration(seconds); }
 
-function viewWorkoutDetail(workoutId) {
-    const history = loadWorkoutHistory();
-    const workout = history.find(w => w.id === workoutId);
-    
-    if (!workout) return;
-    
-    const modal = new bootstrap.Modal(document.getElementById('workoutDetailModal'));
-    const date = new Date(workout.startTime);
-    const dateStr = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-    
-    document.getElementById('workoutDetailTitle').textContent = dateStr;
-    
-    const startTime = new Date(workout.startTime);
-    const endTime = workout.endTime ? new Date(workout.endTime) : null;
-    const durationStr = formatDuration(workout.duration || 0);
-    
-    // Calculate workout statistics
-    const stats = calculateWorkoutStats(workout);
-    
-    const detailsHtml = `
-        <!-- Enhanced Stats Header -->
-        <div class="detail-stats-header">
-            <div class="detail-stat-card">
-                <i class="bi bi-stopwatch"></i>
-                <div class="detail-stat-value">${durationStr}</div>
-                <div class="detail-stat-label">Duration</div>
-            </div>
-            <div class="detail-stat-card">
-                <i class="bi bi-stack"></i>
-                <div class="detail-stat-value">${stats.totalSets}</div>
-                <div class="detail-stat-label">Total Sets</div>
-            </div>
-            <div class="detail-stat-card">
-                <i class="bi bi-lightning-charge"></i>
-                <div class="detail-stat-value">${formatVolume(stats.totalVolume)}</div>
-                <div class="detail-stat-label">Volume</div>
-            </div>
-        </div>
-        
-        <!-- Performance Summary -->
-        <div class="detail-performance">
-            <div class="performance-header">
-                <span class="performance-title">Performance</span>
-                <span class="performance-badge ${getPerformanceBadgeClass(stats.completionRate)}">
-                    ${stats.completionRate}% <i class="bi bi-${stats.completionRate >= 90 ? 'check-circle-fill' : stats.completionRate >= 70 ? 'exclamation-circle-fill' : 'x-circle-fill'}"></i>
-                </span>
-            </div>
-            <div class="performance-bar">
-                <div class="performance-bar-fill" style="width: ${stats.completionRate}%"></div>
-            </div>
-            <div class="performance-text">
-                ${stats.completedSets} of ${stats.totalSets} sets completed
-            </div>
-        </div>
-        
-        <!-- Workout Highlights -->
-        ${stats.highlights.length > 0 ? `
-            <div class="detail-highlights">
-                <div class="highlights-title"><i class="bi bi-stars"></i> Workout Highlights</div>
-                ${stats.highlights.map(h => `
-                    <div class="highlight-item">
-                        <span class="highlight-icon">${h.icon}</span>
-                        <span class="highlight-text">${h.text}</span>
-                    </div>
-                `).join('')}
-            </div>
-        ` : ''}
-        
-        <!-- Exercise Details -->
-        <div class="detail-exercises-section">
-            <div class="exercises-section-title">Exercises</div>
-            ${workout.exercises.map((exercise, exIndex) => {
-                const exStats = calculateExerciseStats(exercise);
-                return `
-                <div class="detail-exercise-card-new ${exStats.allCompleted ? 'all-completed' : ''}" data-exercise-id="${exIndex}">
-                    <div class="detail-exercise-header-new" onclick="toggleDetailExercise(${exIndex})">
-                        <div class="exercise-header-left-new">
-                            ${exStats.allCompleted ? '<i class="bi bi-check-circle-fill exercise-check"></i>' : '<i class="bi bi-circle exercise-check-empty"></i>'}
-                            <div>
-                                <div class="exercise-name-new">${exercise.name}</div>
-                                <div class="exercise-summary-new">${exStats.summary}</div>
-                            </div>
-                        </div>
-                        <div class="exercise-header-right-new">
-                            <span class="exercise-sets-badge">${exercise.sets.length} sets</span>
-                            <i class="bi bi-chevron-down exercise-chevron"></i>
-                        </div>
-                    </div>
-                    <div class="detail-exercise-body-new" style="display: none;">
-                        <div class="detail-sets-table">
-                            <div class="sets-table-header">
-                                <div class="set-col-number">Set</div>
-                                <div class="set-col-actual">Values</div>
-                                <div class="set-col-status">Status</div>
-                            </div>
-                            ${exercise.sets.map((set, index) => {
-                                // Backward compatibility: check completed property first, fallback to value-based check
-                                const completed = set.completed !== undefined ? set.completed : (set.actual.weight > 0 || set.actual.reps > 0 || set.actual.time > 0);
-                                return `
-                                <div class="sets-table-row ${completed ? 'set-completed' : 'set-missed'}">
-                                    <div class="set-col-number">${index + 1}</div>
-                                    <div class="set-col-actual">
-                                        ${set.actual.weight}lbs × ${set.actual.reps}
-                                        ${set.actual.time > 0 ? `<span class="set-time">${set.actual.time}s</span>` : ''}
-                                    </div>
-                                    <div class="set-col-status">
-                                        <span class="status-icon" title="${completed ? 'Completed' : 'Not completed'}">
-                                            <i class="bi bi-${completed ? 'check-circle-fill' : 'x-circle-fill'}"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-    
-    document.getElementById('workoutDetailBody').innerHTML = detailsHtml;
-    
-    // Set up button handlers
-    document.getElementById('deleteWorkoutBtn').onclick = () => {
-        deleteWorkout(workoutId);
-        modal.hide();
-    };
-    
-    document.getElementById('useTemplateBtn').onclick = () => {
-        useAsTemplate(workoutId);
-        modal.hide();
-    };
-    
-    modal.show();
-}
+function viewWorkoutDetail(workoutId) { return MyGymHistoryReporting.viewWorkoutDetail(workoutId); }
 
-function calculateWorkoutStats(workout) {
-    let totalSets = 0;
-    let completedSets = 0;
-    let totalVolume = 0;
-    let heaviestSet = { weight: 0, exercise: '', reps: 0 };
-    let mostVolumeExercise = { name: '', volume: 0 };
-    let perfectExercises = [];
-    
-    workout.exercises.forEach(exercise => {
-        let exerciseVolume = 0;
-        let exercisePerfect = true;
-        
-        exercise.sets.forEach(set => {
-            totalSets++;
-            const actualVol = set.actual.weight * set.actual.reps;
-            
-            totalVolume += actualVol;
-            exerciseVolume += actualVol;
-            
-            // Backward compatibility: check completed property first, fallback to value-based check
-            const isCompleted = set.completed !== undefined ? set.completed : (set.actual.weight > 0 || set.actual.reps > 0);
-            if (isCompleted) {
-                completedSets++;
-            } else {
-                exercisePerfect = false;
-            }
-            
-            if (set.actual.weight > heaviestSet.weight) {
-                heaviestSet = { weight: set.actual.weight, exercise: exercise.name, reps: set.actual.reps };
-            }
-        });
-        
-        if (exerciseVolume > mostVolumeExercise.volume) {
-            mostVolumeExercise = { name: exercise.name, volume: exerciseVolume };
-        }
-        
-        if (exercisePerfect && exercise.sets.length > 0) {
-            perfectExercises.push(exercise.name);
-        }
-    });
-    
-    const completionRate = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
-    
-    // Generate highlights
-    const highlights = [];
-    if (heaviestSet.weight > 0) {
-        highlights.push({
-            icon: '💪',
-            text: `Heaviest Set: ${heaviestSet.exercise} - ${heaviestSet.weight}lbs × ${heaviestSet.reps}`
-        });
-    }
-    if (mostVolumeExercise.volume > 0) {
-        highlights.push({
-            icon: '🔥',
-            text: `Most Volume: ${mostVolumeExercise.name} - ${formatVolume(mostVolumeExercise.volume)}`
-        });
-    }
-    if (perfectExercises.length > 0) {
-        highlights.push({
-            icon: '⭐',
-            text: `All Sets Completed: ${perfectExercises[0]}${perfectExercises.length > 1 ? ` +${perfectExercises.length - 1} more` : ''}`
-        });
-    }
-    
-    return {
-        totalSets,
-        completedSets,
-        completionRate,
-        totalVolume,
-        highlights
-    };
-}
+function calculateWorkoutStats(workout) { return MyGymHistoryReporting.calculateWorkoutStats(workout); }
 
-function calculateExerciseStats(exercise) {
-    let totalVolume = 0;
-    let completedSets = 0;
-    
-    exercise.sets.forEach(set => {
-        totalVolume += set.actual.weight * set.actual.reps;
-        if (set.actual.weight > 0 || set.actual.reps > 0) {
-            completedSets++;
-        }
-    });
-    
-    const allCompleted = completedSets === exercise.sets.length && exercise.sets.length > 0;
-    const avgWeight = exercise.sets.length > 0 ? 
-        Math.round(exercise.sets.reduce((sum, s) => sum + s.actual.weight, 0) / exercise.sets.length) : 0;
-    const avgReps = exercise.sets.length > 0 ? 
-        Math.round(exercise.sets.reduce((sum, s) => sum + s.actual.reps, 0) / exercise.sets.length) : 0;
-    
-    return {
-        allCompleted,
-        summary: `${completedSets}/${exercise.sets.length} sets • ${avgWeight}lbs × ${avgReps} avg • ${formatVolume(totalVolume)}`
-    };
-}
+function calculateExerciseStats(exercise) { return MyGymHistoryReporting.calculateExerciseStats(exercise); }
 
 // Exercise History Functions
-function getExerciseHistory(exerciseName) {
-    const history = loadWorkoutHistory();
-    const exerciseHistory = [];
-    const reference = typeof exerciseName === 'string' ? { name: exerciseName } : exerciseName;
-    
-    // Filter workouts that contain this exercise and extract sets
-    history.forEach(workout => {
-        const exercise = workout.exercises.find(ex => MyGymExerciseIdentity.matchesExerciseReference(ex, reference));
-        if (exercise && exercise.sets.length > 0) {
-            exerciseHistory.push({
-                workoutDate: new Date(workout.completedAt),
-                completedAt: workout.completedAt,
-                duration: workout.duration,
-                sets: exercise.sets.map(set => ({
-                    actual: { ...set.actual }
-                })),
-                timeMode: exercise.timeMode || false
-            });
-        }
-    });
-    
-    // Sort chronologically (oldest to newest)
-    exerciseHistory.sort((a, b) => a.workoutDate - b.workoutDate);
-    
-    return exerciseHistory;
-}
+function getExerciseHistory(exerciseName) { return MyGymHistoryReporting.getExerciseHistory(exerciseName); }
 
-function showExerciseHistory(exerciseName) {
-    const history = getExerciseHistory(exerciseName);
-    const modal = new bootstrap.Modal(document.getElementById('exerciseHistoryModal'));
-    const titleEl = document.getElementById('exerciseHistoryTitle');
-    const bodyEl = document.getElementById('exerciseHistoryBody');
-    
-    titleEl.textContent = typeof exerciseName === 'string' ? exerciseName : exerciseName?.name || 'Exercise History';
-    
-    if (history.length === 0) {
-        bodyEl.innerHTML = `
-            <div class="empty-state">
-                <i class="bi bi-graph-up"></i>
-                <p>No history for this exercise yet.<br>Complete a workout to see your progress!</p>
-            </div>
-        `;
-        modal.show();
-        return;
-    }
-    
-    // Render history grouped by workout session
-    let html = '<div class="exercise-history-list">';
-    
-    history.forEach((session, index) => {
-        const date = new Date(session.completedAt);
-        const isToday = date.toDateString() === new Date().toDateString();
-        const isYesterday = date.toDateString() === new Date(Date.now() - 86400000).toDateString();
-        
-        let dateLabel;
-        if (isToday) {
-            dateLabel = 'Today';
-        } else if (isYesterday) {
-            dateLabel = 'Yesterday';
-        } else {
-            dateLabel = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        }
-        
-        html += `
-            <div class="history-session">
-                <div class="history-session-header">
-                    <span class="history-date">${dateLabel}</span>
-                    <span class="history-meta">${session.sets.length} set${session.sets.length !== 1 ? 's' : ''}</span>
-                </div>
-                <div class="history-sets">
-        `;
-        
-        session.sets.forEach((set, setIndex) => {
-            let setDisplay;
-            if (session.timeMode) {
-                // Time-based exercise
-                const minutes = Math.floor(set.actual.time / 60);
-                const seconds = set.actual.time % 60;
-                setDisplay = minutes > 0 
-                    ? `${minutes}m ${seconds}s`
-                    : `${seconds}s`;
-            } else {
-                // Weight/reps exercise
-                if (set.actual.weight > 0 || set.actual.reps > 0) {
-                    setDisplay = `${set.actual.weight}kg × ${set.actual.reps}`;
-                } else {
-                    setDisplay = '<span class="text-muted">Not completed</span>';
-                }
-            }
-            
-            html += `
-                <div class="history-set">
-                    <span class="history-set-number">#${setIndex + 1}</span>
-                    <span class="history-set-value">${setDisplay}</span>
-                </div>
-            `;
-        });
-        
-        html += `
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    
-    bodyEl.innerHTML = html;
-    modal.show();
-}
+function showExerciseHistory(exerciseName) { return MyGymHistoryReporting.showExerciseHistory(exerciseName); }
 
-function showCurrentWorkoutExerciseHistory(exerciseId) {
-    const exercise = currentWorkout?.exercises?.find(ex => ex.id === exerciseId);
-    if (!exercise) return;
-    showExerciseHistory(exercise);
-}
+function showCurrentWorkoutExerciseHistory(exerciseId) { return MyGymHistoryReporting.showCurrentWorkoutExerciseHistory(exerciseId); }
 
-function getSetStatus(set) {
-    // Simplified: just check if completed (removed planned comparison)
-    const actualVol = set.actual.weight * set.actual.reps;
-    const completed = actualVol > 0 || set.actual.time > 0;
-    
-    return { 
-        class: completed ? 'set-completed' : 'set-missed', 
-        icon: completed ? 'check-circle-fill' : 'x-circle-fill',
-        arrow: '', 
-        title: completed ? 'Completed' : 'Not completed',
-        completed: completed,
-        percentage: completed ? 100 : 0
-    };
-}
+function getSetStatus(set) { return MyGymHistoryReporting.getSetStatus(set); }
 
-function formatVolume(volume) {
-    if (volume >= 1000) {
-        return (volume / 1000).toFixed(1) + 'k lbs';
-    }
-    return volume + ' lbs';
-}
+function getPerformanceBadgeClass(rate) { return MyGymHistoryReporting.getPerformanceBadgeClass(rate); }
 
-function getPerformanceBadgeClass(rate) {
-    if (rate >= 90) return 'badge-excellent';
-    if (rate >= 70) return 'badge-good';
-    return 'badge-needs-work';
-}
+function toggleDetailExercise(exerciseId) { return MyGymHistoryReporting.toggleDetailExercise(exerciseId); }
 
-function toggleDetailExercise(exerciseId) {
-    const card = document.querySelector(`[data-exercise-id="${exerciseId}"]`);
-    if (!card) return;
-    
-    const body = card.querySelector('.detail-exercise-body-new');
-    const chevron = card.querySelector('.exercise-chevron');
-    
-    if (body.style.display === 'none') {
-        body.style.display = 'block';
-        chevron.style.transform = 'rotate(180deg)';
-    } else {
-        body.style.display = 'none';
-        chevron.style.transform = 'rotate(0deg)';
-    }
-}
+function deleteWorkout(workoutId) { return MyGymHistoryReporting.deleteWorkout(workoutId); }
 
-function deleteWorkout(workoutId) {
-    if (!confirm('Delete this workout from history?')) return;
-    
-    let history = loadWorkoutHistory();
-    history = history.filter(w => w.id !== workoutId);
-    saveWorkoutHistory(history);
-    renderHistory();
-}
+function clearAllHistory() { return MyGymHistoryReporting.clearAllHistory(); }
 
-function clearAllHistory() {
-    if (!confirm('Delete ALL workout history? This cannot be undone!')) return;
-    
-    clearWorkoutHistory();
-    renderHistory();
-}
-
-function useAsTemplate(workoutId) {
-    const history = loadWorkoutHistory();
-    const workout = history.find(w => w.id === workoutId);
-    
-    if (!workout) return;
-    
-    // Create new workout with template data
-    currentWorkout = {
-        id: Date.now(),
-        startTime: new Date().toISOString(),
-        exercises: workout.exercises.map(exercise => ({
-            id: Date.now() + Math.random(),
-            name: exercise.name,
-            category: exercise.category || '',
-            exerciseLibraryId: exercise.exerciseLibraryId ?? null,
-            collapsed: false,
-            detailsHidden: false,
-            selectedSetIndex: 0,
-            sets: exercise.sets.map(set => ({
-                collapsed: false,
-                planned: { ...set.actual },
-                actual: { ...set.actual }
-            }))
-        }))
-    };
-    
-    saveCurrentWorkout();
-    showWorkoutScreen();
-    
-    alert('Template loaded! Adjust values as needed.');
-}
+function useAsTemplate(workoutId) { return MyGymHistoryReporting.useAsTemplate(workoutId); }
 
 // ===== EXERCISE LIBRARY MANAGEMENT =====
 
 function loadExerciseLibrary() {
-    return MyGymStorage.loadExerciseLibrary(getDefaultExercises());
+    return MyGymExerciseLibrary.loadExerciseLibrary();
 }
 
 function saveExerciseLibrary(library) {
-    return MyGymStorage.saveExerciseLibrary(library, getDefaultExercises());
+    return MyGymExerciseLibrary.saveExerciseLibrary(library);
 }
 
 function getDefaultExercises() {
-    return [
-        { id: Date.now(), name: "Bench Press", category: "Push", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 },
-        { id: Date.now() + 1, name: "Squats", category: "Legs", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 },
-        { id: Date.now() + 2, name: "Deadlift", category: "Pull", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 },
-        { id: Date.now() + 3, name: "Overhead Press", category: "Push", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 },
-        { id: Date.now() + 4, name: "Pull-ups", category: "Pull", createdAt: new Date().toISOString(), lastUsed: null, usageCount: 0 }
-    ];
+    return MyGymExerciseLibrary.getDefaultExercises();
 }
 
 function renderExerciseLibrary(searchQuery = '') {
-    const library = loadExerciseLibrary();
-    const container = document.getElementById('exerciseLibraryList');
-    
-    if (!container) return;
-    
-    // Filter by search
-    const filtered = searchQuery 
-        ? library.filter(ex => ex.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        : library;
-    
-    // Sort by usage count (most used first), then alphabetically
-    const sorted = filtered.sort((a, b) => {
-        if (b.usageCount !== a.usageCount) {
-            return b.usageCount - a.usageCount;
-        }
-        return a.name.localeCompare(b.name);
-    });
-    
-    // Update count
-    const countEl = document.getElementById('exerciseCount');
-    if (countEl) {
-        countEl.textContent = `${library.length} exercise${library.length !== 1 ? 's' : ''}`;
-    }
-    
-    if (sorted.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="bi bi-search"></i>
-                <p>No exercises found</p>
-            </div>
-        `;
-        return;
-    }
-    
-    container.innerHTML = sorted.map(exercise => `
-        <div class="exercise-library-card">
-            <div class="exercise-library-info">
-                <div class="exercise-library-name">
-                    ${exercise.category ? `<span class="category-badge">${exercise.category}</span>` : ''}
-                    ${exercise.name}
-                </div>
-                <div class="exercise-library-meta">
-                    ${exercise.usageCount > 0 
-                        ? `Used ${exercise.usageCount} time${exercise.usageCount !== 1 ? 's' : ''}`
-                        : 'Never used'}
-                </div>
-            </div>
-            <div class="exercise-library-actions">
-                <button class="btn-icon-action" onclick="editExerciseLibrary(${exercise.id})" title="Edit">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn-icon-action btn-delete" onclick="deleteExerciseLibrary(${exercise.id})" title="Delete">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+    return MyGymExerciseLibrary.renderExerciseLibrary(searchQuery);
 }
 
 function showAddExerciseLibraryModal() {
-    const modal = new bootstrap.Modal(document.getElementById('exerciseLibraryModal'));
-    document.getElementById('exerciseLibraryModalTitle').textContent = 'Add Exercise';
-    document.getElementById('exerciseLibraryId').value = '';
-    document.getElementById('exerciseLibraryNameInput').value = '';
-    document.getElementById('exerciseLibraryCategoryInput').value = '';
-    modal.show();
-    setTimeout(() => document.getElementById('exerciseLibraryNameInput').focus(), 300);
+    return MyGymExerciseLibrary.showAddExerciseLibraryModal();
 }
 
 function editExerciseLibrary(exerciseId) {
-    const library = loadExerciseLibrary();
-    const exercise = library.find(ex => ex.id === exerciseId);
-    if (!exercise) return;
-    
-    const modal = new bootstrap.Modal(document.getElementById('exerciseLibraryModal'));
-    document.getElementById('exerciseLibraryModalTitle').textContent = 'Edit Exercise';
-    document.getElementById('exerciseLibraryId').value = exercise.id;
-    document.getElementById('exerciseLibraryNameInput').value = exercise.name;
-    document.getElementById('exerciseLibraryCategoryInput').value = exercise.category || '';
-    modal.show();
-    setTimeout(() => document.getElementById('exerciseLibraryNameInput').focus(), 300);
+    return MyGymExerciseLibrary.editExerciseLibrary(exerciseId);
 }
 
 function saveExerciseLibraryItem() {
-    const id = document.getElementById('exerciseLibraryId').value;
-    const name = document.getElementById('exerciseLibraryNameInput').value.trim();
-    const category = document.getElementById('exerciseLibraryCategoryInput').value;
-    
-    if (!name) {
-        alert('Please enter an exercise name');
-        return;
+    const result = MyGymExerciseLibrary.saveExerciseLibraryItem();
+
+    loadCurrentWorkout();
+    if (currentWorkout) {
+        currentWorkout = MyGymExerciseIdentity.normalizeWorkout(currentWorkout, loadExerciseLibrary());
     }
-    
-    let library = loadExerciseLibrary();
-    
-    if (id) {
-        // Update existing
-        const index = library.findIndex(ex => ex.id == id);
-        if (index !== -1) {
-            const previousExercise = { ...library[index] };
-            library[index].name = name;
-            library[index].category = category;
-            saveExerciseLibrary(library);
-            const propagationResult = MyGymExerciseIdentity.propagateExerciseLibraryChange({
-                libraryExerciseId: library[index].id,
-                oldName: previousExercise.name,
-                newName: name,
-                newCategory: category
-            });
-            currentWorkout = MyGymStorage.loadCurrentWorkout();
-            if (currentWorkout) {
-                currentWorkout = MyGymExerciseIdentity.normalizeWorkout(currentWorkout, loadExerciseLibrary());
-            }
-            if (!document.getElementById('workoutScreen').classList.contains('d-none')) {
-                renderExercises();
-            }
-            console.info('Exercise propagation result:', propagationResult);
-        }
-    } else {
-        // Create new
-        library.push({
-            id: Date.now(),
-            name: name,
-            category: category,
-            createdAt: new Date().toISOString(),
-            lastUsed: null,
-            usageCount: 0
-        });
+
+    if (!document.getElementById('workoutScreen').classList.contains('d-none')) {
+        renderExercises();
     }
-    
-    if (!id) {
-        saveExerciseLibrary(library);
-    }
-    renderExerciseLibrary();
-    
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('exerciseLibraryModal'));
-    modal.hide();
+
+    return result;
 }
 
 // ============================================
 // AUTOCOMPLETE FUNCTIONALITY
 // ============================================
 
-let selectedAutocompleteIndex = -1;
-
 function initializeAutocomplete() {
-    const input = document.getElementById('exerciseNameInput');
-    const addToLibraryCheckbox = document.getElementById('addToLibraryCheckbox');
-    const addToLibraryContainer = document.getElementById('addToLibraryContainer');
-    const categorySelectContainer = document.getElementById('categorySelectContainer');
-    
-    if (!input) return;
-    
-    // Input event - show suggestions as user types
-    input.addEventListener('input', (e) => {
-        const value = e.target.value.trim();
-        
-        if (value.length === 0) {
-            hideAutocomplete();
-            addToLibraryContainer.style.display = 'none';
-            return;
-        }
-        
-        showAutocompleteSuggestions(value);
-    });
-    
-    // Keyboard navigation
-    input.addEventListener('keydown', (e) => {
-        const dropdown = document.getElementById('autocompleteDropdown');
-        const items = dropdown.querySelectorAll('.autocomplete-item');
-        
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            selectedAutocompleteIndex = Math.min(selectedAutocompleteIndex + 1, items.length - 1);
-            updateAutocompleteSelection(items);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            selectedAutocompleteIndex = Math.max(selectedAutocompleteIndex - 1, -1);
-            updateAutocompleteSelection(items);
-        } else if (e.key === 'Enter') {
-            if (selectedAutocompleteIndex >= 0 && items[selectedAutocompleteIndex]) {
-                e.preventDefault();
-                items[selectedAutocompleteIndex].click();
-            }
-            // If no suggestion selected, default Enter behavior saves exercise
-        } else if (e.key === 'Escape') {
-            hideAutocomplete();
-        }
-    });
-    
-    // Toggle category selector based on checkbox
-    if (addToLibraryCheckbox) {
-        addToLibraryCheckbox.addEventListener('change', (e) => {
-            categorySelectContainer.style.display = e.target.checked ? 'block' : 'none';
-        });
-    }
-    
-    // Click outside to close
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.autocomplete-container')) {
-            hideAutocomplete();
-        }
-    });
-    
-    // Reset when modal closes
-    const addExerciseModal = document.getElementById('addExerciseModal');
-    if (addExerciseModal) {
-        addExerciseModal.addEventListener('hidden.bs.modal', () => {
-            input.value = '';
-            hideAutocomplete();
-            addToLibraryContainer.style.display = 'none';
-        });
-    }
+    return MyGymExerciseLibrary.initializeAutocomplete();
 }
 
 function showAutocompleteSuggestions(searchText) {
-    const library = loadExerciseLibrary();
-    const dropdown = document.getElementById('autocompleteDropdown');
-    const addToLibraryContainer = document.getElementById('addToLibraryContainer');
-    const autocompleteHint = document.getElementById('autocompleteHint');
-    
-    if (!dropdown) return;
-    
-    // Filter and sort exercises
-    const filtered = library
-        .filter(ex => ex.name.toLowerCase().includes(searchText.toLowerCase()))
-        .sort((a, b) => {
-            // Smart sorting: usage count, then last used, then alphabetical
-            if (a.usageCount !== b.usageCount) {
-                return b.usageCount - a.usageCount; // Higher usage first
-            }
-            if (a.lastUsed && b.lastUsed) {
-                return new Date(b.lastUsed) - new Date(a.lastUsed); // More recent first
-            }
-            if (a.lastUsed && !b.lastUsed) return -1;
-            if (!a.lastUsed && b.lastUsed) return 1;
-            return a.name.localeCompare(b.name); // Alphabetical
-        });
-    
-    selectedAutocompleteIndex = -1;
-    
-    if (filtered.length === 0) {
-        // No matches - show "Add to Library" checkbox
-        dropdown.style.display = 'none';
-        addToLibraryContainer.style.display = 'block';
-        autocompleteHint.style.display = 'block';
-    } else {
-        // Show suggestions
-        dropdown.style.display = 'block';
-        addToLibraryContainer.style.display = 'none';
-        autocompleteHint.style.display = 'none';
-        
-        dropdown.innerHTML = filtered.map(ex => {
-            const categoryBadge = ex.category 
-                ? `<span class="category-badge-small">${ex.category}</span>` 
-                : '';
-            const usageInfo = ex.usageCount > 0 
-                ? `<span class="usage-stats-small">${ex.usageCount}x • ${formatLastUsed(ex.lastUsed)}</span>`
-                : '<span class="usage-stats-small">Never used</span>';
-            
-            return `
-                <div class="autocomplete-item" data-name="${ex.name}">
-                    <div class="autocomplete-item-main">
-                        <span class="autocomplete-item-name">${highlightMatch(ex.name, searchText)}</span>
-                        ${categoryBadge}
-                    </div>
-                    <div class="autocomplete-item-stats">${usageInfo}</div>
-                </div>
-            `;
-        }).join('');
-        
-        // Add click handlers
-        dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
-            item.addEventListener('click', () => {
-                selectSuggestion(item.dataset.name);
-            });
-        });
-    }
+    return MyGymExerciseLibrary.showAutocompleteSuggestions(searchText);
 }
 
 function updateAutocompleteSelection(items) {
-    items.forEach((item, index) => {
-        if (index === selectedAutocompleteIndex) {
-            item.classList.add('active');
-            item.scrollIntoView({ block: 'nearest' });
-        } else {
-            item.classList.remove('active');
-        }
-    });
+    return MyGymExerciseLibrary.updateAutocompleteSelection(items);
 }
 
 function selectSuggestion(name) {
-    const input = document.getElementById('exerciseNameInput');
-    input.value = name;
-    hideAutocomplete();
-    
-    // Trigger saveExercise directly when selecting from library
-    saveExercise();
+    return MyGymExerciseLibrary.selectSuggestion(name);
 }
 
 function hideAutocomplete() {
-    const dropdown = document.getElementById('autocompleteDropdown');
-    const autocompleteHint = document.getElementById('autocompleteHint');
-    
-    if (dropdown) dropdown.style.display = 'none';
-    if (autocompleteHint) autocompleteHint.style.display = 'none';
-    
-    selectedAutocompleteIndex = -1;
+    return MyGymExerciseLibrary.hideAutocomplete();
 }
 
 function highlightMatch(text, search) {
-    const regex = new RegExp(`(${search})`, 'gi');
-    return text.replace(regex, '<strong>$1</strong>');
+    return MyGymExerciseLibrary.highlightMatch(text, search);
 }
 
 function formatLastUsed(lastUsedDate) {
-    if (!lastUsedDate) return 'Never';
-    
-    const date = new Date(lastUsedDate);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
-    return `${Math.floor(diffDays / 365)}y ago`;
+    return MyGymExerciseLibrary.formatLastUsed(lastUsedDate);
 }
 
-// Update exercise usage when adding to workout
 function updateExerciseUsage(exerciseName, exerciseLibraryId = null) {
-    const library = loadExerciseLibrary();
-    const exercise = exerciseLibraryId != null
-        ? MyGymExerciseIdentity.findLibraryExerciseById(library, exerciseLibraryId)
-        : MyGymExerciseIdentity.findLibraryExerciseByName(library, exerciseName);
-    
-    if (exercise) {
-        exercise.usageCount = (exercise.usageCount || 0) + 1;
-        exercise.lastUsed = new Date().toISOString();
-        saveExerciseLibrary(library);
-    }
+    return MyGymExerciseLibrary.updateExerciseUsage(exerciseName, exerciseLibraryId);
 }
 
-// Add new exercise to library
 function addExerciseToLibrary(name, category = '') {
-    const library = loadExerciseLibrary();
-    
-    // Check if already exists
-    const exists = MyGymExerciseIdentity.findLibraryExerciseByName(library, name);
-    if (exists) return;
-    
-    library.push({
-        id: Date.now(),
-        name: name,
-        category: category,
-        createdAt: new Date().toISOString(),
-        lastUsed: null,
-        usageCount: 0
-    });
-    
-    saveExerciseLibrary(library);
+    return MyGymExerciseLibrary.addExerciseToLibrary(name, category);
 }
 
 function deleteExerciseLibrary(exerciseId) {
-    if (!confirm('Delete this exercise from library?')) return;
-    
-    let library = loadExerciseLibrary();
-    library = library.filter(ex => ex.id !== exerciseId);
-    saveExerciseLibrary(library);
-    renderExerciseLibrary();
+    return MyGymExerciseLibrary.deleteExerciseLibrary(exerciseId);
 }
 
 function initializeExerciseSearch() {
-    const searchInput = document.getElementById('exerciseSearchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            renderExerciseLibrary(e.target.value);
-        });
-    }
+    return MyGymExerciseLibrary.initializeExerciseSearch();
 }
 
 // ===== DATA MANAGEMENT =====
+
 
 let dataBrowserState = {
     type: null,           // 'history', 'exercises', 'current'
@@ -2613,6 +1636,49 @@ function triggerImport() {
     document.getElementById('importFileInput').click();
 }
 
+function formatHistoryRepairSummary(result) {
+    return [
+        `Updated workouts: ${result.workoutsUpdated}/${result.workoutsScanned}`,
+        `Updated history exercises: ${result.exercisesUpdated}/${result.exercisesScanned}`,
+        `Matched by library ID: ${result.linkedById}`,
+        `Matched by exact name: ${result.linkedByName}`,
+        `Skipped unmatched: ${result.skippedUnmatched}`,
+        `Current workout updates: ${result.currentWorkoutUpdated}/${result.currentWorkoutScanned}`
+    ].join('\n');
+}
+
+function runHistoryRepairFlow() {
+    const history = loadWorkoutHistory();
+    if (!history.length) {
+        alert('No workout history found to repair.');
+        return;
+    }
+
+    const confirmMessage = [
+        'Repair workout history using the current exercise library?',
+        '',
+        'This will conservatively update stored exercise snapshots by:',
+        '• exerciseLibraryId match first',
+        '• exact case-insensitive name match second',
+        '',
+        'Unmatched records will be left untouched.'
+    ].join('\n');
+
+    if (!confirm(confirmMessage)) return;
+
+    const result = MyGymExerciseIdentity.reconcileStoredExerciseHistory({ includeCurrentWorkout: true });
+
+    loadCurrentWorkout();
+    if (!document.getElementById('workoutScreen').classList.contains('d-none')) {
+        renderExercises();
+    }
+    renderHistory();
+    renderExerciseLibrary();
+
+    alert(`History repair complete.\n\n${formatHistoryRepairSummary(result)}`);
+    console.info('Manual history repair result:', result);
+}
+
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -2881,209 +1947,29 @@ function deleteCategory(categoryId) {
 
 // ===== CATEGORY BREAKDOWN =====
 
-let categoryBreakdownModal = null;
-let breakdownDateRange = { start: null, end: null };
+function getCategoryBreakdownModal() { return MyGymHistoryReporting.getCategoryBreakdownModal(); }
 
-function getCategoryBreakdownModal() {
-    if (!categoryBreakdownModal) {
-        categoryBreakdownModal = new bootstrap.Modal(document.getElementById('categoryBreakdownModal'));
-    }
-    return categoryBreakdownModal;
-}
+function getCategoryForExercise(exerciseName) { return MyGymHistoryReporting.getCategoryForExercise(exerciseName); }
 
-function getCategoryForExercise(exerciseName) {
-    if (exerciseName && typeof exerciseName === 'object') {
-        const library = loadExerciseLibrary();
-        const exercise = MyGymExerciseIdentity.resolveExerciseReference(exerciseName, library);
-        return exercise?.category || exerciseName.category || 'Uncategorized';
-    }
+function calculateCategoryBreakdown(startDate, endDate) { return MyGymHistoryReporting.calculateCategoryBreakdown(startDate, endDate); }
 
-    const library = loadExerciseLibrary();
-    const exercise = MyGymExerciseIdentity.findLibraryExerciseByName(library, exerciseName);
-    return exercise?.category || 'Uncategorized';
-}
+function renderCategoryChart(breakdownData) { return MyGymHistoryReporting.renderCategoryChart(breakdownData); }
 
-function calculateCategoryBreakdown(startDate, endDate) {
-    const history = loadWorkoutHistory();
-    const categories = {};
-    let totalVolume = 0;
-    let workoutCount = 0;
-    
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-    
-    history.forEach(workout => {
-        const workoutDate = new Date(workout.startTime);
-        if (workoutDate < start || workoutDate > end) return;
-        
-        workoutCount++;
-        
-        workout.exercises?.forEach(exercise => {
-            const category = getCategoryForExercise(exercise);
-            
-            exercise.sets?.forEach(set => {
-                // Only count completed sets
-                const isCompleted = set.completed !== undefined ? set.completed : 
-                    (set.actual?.weight > 0 || set.actual?.reps > 0 || set.actual?.time > 0);
-                
-                if (!isCompleted) return;
-                
-                const weight = set.actual?.weight || 0;
-                const reps = set.actual?.reps || 1;
-                const volume = weight * reps;
-                
-                categories[category] = (categories[category] || 0) + volume;
-                totalVolume += volume;
-            });
-        });
-    });
-    
-    return { categories, totalVolume, workoutCount };
-}
+function renderCategoryLegend(breakdownData) { return MyGymHistoryReporting.renderCategoryLegend(breakdownData); }
 
-function renderCategoryChart(breakdownData) {
-    const donut = document.getElementById('categoryDonut');
-    const { categories, totalVolume } = breakdownData;
-    
-    if (totalVolume === 0) {
-        donut.style.background = '#374151';
-        document.getElementById('donutTotalVolume').textContent = '0';
-        return;
-    }
-    
-    // Sort categories by volume descending
-    const sorted = Object.entries(categories).sort((a, b) => b[1] - a[1]);
-    
-    // Build conic-gradient
-    let gradientParts = [];
-    let currentDeg = 0;
-    
-    sorted.forEach(([category, volume]) => {
-        const percentage = volume / totalVolume;
-        const degrees = percentage * 360;
-        const color = getCategoryColor(category);
-        
-        gradientParts.push(`${color} ${currentDeg}deg ${currentDeg + degrees}deg`);
-        currentDeg += degrees;
-    });
-    
-    donut.style.background = `conic-gradient(${gradientParts.join(', ')})`;
-    document.getElementById('donutTotalVolume').textContent = formatVolume(totalVolume);
-}
+function renderBreakdownSummary(breakdownData) { return MyGymHistoryReporting.renderBreakdownSummary(breakdownData); }
 
-function renderCategoryLegend(breakdownData) {
-    const legend = document.getElementById('categoryLegend');
-    const { categories, totalVolume } = breakdownData;
-    
-    if (totalVolume === 0) {
-        legend.innerHTML = '<p class="text-muted text-center">No data for this period</p>';
-        return;
-    }
-    
-    // Sort categories by volume descending
-    const sorted = Object.entries(categories).sort((a, b) => b[1] - a[1]);
-    
-    legend.innerHTML = sorted.map(([category, volume]) => {
-        const percentage = ((volume / totalVolume) * 100).toFixed(1);
-        const color = getCategoryColor(category);
-        
-        return `
-            <div class="legend-item">
-                <span class="legend-swatch" style="background: ${color}"></span>
-                <span class="legend-label">${category}</span>
-                <span class="legend-value">${percentage}% (${formatVolume(volume)} kg)</span>
-            </div>`;
-    }).join('');
-}
+function formatVolume(volume) { return MyGymHistoryReporting.formatVolume(volume); }
 
-function renderBreakdownSummary(breakdownData) {
-    const summary = document.getElementById('breakdownSummary');
-    const { workoutCount, totalVolume } = breakdownData;
-    
-    summary.innerHTML = `
-        <div class="summary-stat">
-            <span class="summary-value">${workoutCount}</span>
-            <span class="summary-label">Workouts</span>
-        </div>
-        <div class="summary-stat">
-            <span class="summary-value">${formatVolume(totalVolume)}</span>
-            <span class="summary-label">Total Volume (kg)</span>
-        </div>`;
-}
+function showCategoryBreakdown() { return MyGymHistoryReporting.showCategoryBreakdown(); }
 
-function formatVolume(volume) {
-    if (volume >= 1000) {
-        return (volume / 1000).toFixed(1) + 'k';
-    }
-    return Math.round(volume).toLocaleString();
-}
+function setDateRange(days) { return MyGymHistoryReporting.setDateRange(days); }
 
-function showCategoryBreakdown() {
-    // Default to last 7 days
-    setDateRange(7);
-    getCategoryBreakdownModal().show();
-}
+function toggleCustomDateRange() { return MyGymHistoryReporting.toggleCustomDateRange(); }
 
-function setDateRange(days) {
-    // Update active button
-    document.querySelectorAll('.date-range-btn').forEach(btn => btn.classList.remove('active'));
-    event?.target?.classList.add('active');
-    
-    // Hide custom range
-    document.getElementById('customDateRange').classList.add('d-none');
-    
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - days + 1);
-    
-    breakdownDateRange = { start, end };
-    refreshBreakdown();
-}
+function applyCustomDateRange() { return MyGymHistoryReporting.applyCustomDateRange(); }
 
-function toggleCustomDateRange() {
-    document.querySelectorAll('.date-range-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    const customRange = document.getElementById('customDateRange');
-    customRange.classList.toggle('d-none');
-    
-    // Set default dates if empty
-    const startInput = document.getElementById('breakdownStartDate');
-    const endInput = document.getElementById('breakdownEndDate');
-    
-    if (!startInput.value) {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        startInput.value = weekAgo.toISOString().split('T')[0];
-    }
-    if (!endInput.value) {
-        endInput.value = new Date().toISOString().split('T')[0];
-    }
-}
-
-function applyCustomDateRange() {
-    const start = document.getElementById('breakdownStartDate').value;
-    const end = document.getElementById('breakdownEndDate').value;
-    
-    if (!start || !end) {
-        alert('Please select both start and end dates');
-        return;
-    }
-    
-    breakdownDateRange = { start: new Date(start), end: new Date(end) };
-    refreshBreakdown();
-}
-
-function refreshBreakdown() {
-    const { start, end } = breakdownDateRange;
-    const breakdownData = calculateCategoryBreakdown(start, end);
-    
-    renderCategoryChart(breakdownData);
-    renderCategoryLegend(breakdownData);
-    renderBreakdownSummary(breakdownData);
-}
+function refreshBreakdown() { return MyGymHistoryReporting.refreshBreakdown(); }
 
 // ─── PWA Install Prompt ───────────────────────────────────────────────────────
 

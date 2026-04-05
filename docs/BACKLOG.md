@@ -29,7 +29,12 @@ Use one or more:
 ### Define and implement exercise identity + propagation model
 - Tags: `code` `product` `ux`
 - Status: in progress
-- Notes: implementation plan prepared in `docs/P1_EXERCISE_PROPAGATION_PLAN.md`; Phase 1 + 2 implemented with `exerciseLibraryId`, identity helpers, and propagation into active workout/history. Manual testing passed; later phases still pending.
+- Notes: implementation plan prepared in `docs/P1_EXERCISE_PROPAGATION_PLAN.md`; propagation, manual repair flow, and reporting hardening have been implemented and verified through iterative testing. Residual cleanup may remain, but the core trust work is largely complete.
+
+### Plan modular cleanup of `app.js`
+- Tags: `code` `ops`
+- Status: planned
+- Notes: modular cleanup plan prepared in `docs/MODULAR_CLEANUP_PLAN.md`; recommended extraction order is exercise library first, then history/reporting, then data tools
 
 ### Create first code-readiness assessment
 - Tags: `code`
