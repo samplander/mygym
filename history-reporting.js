@@ -1,6 +1,12 @@
 (function () {
     let categoryBreakdownModal = null;
     let breakdownDateRange = { start: null, end: null };
+    let historyViewState = {
+        visibleCount: 5,
+        searchTerm: '',
+        category: '',
+        range: 'all'
+    };
 
     function getCurrentWorkoutState() {
         return window.MyGymAppState?.getCurrentWorkout?.() || null;
@@ -202,6 +208,254 @@
         `;
     }
 
+    function getWorkoutDate(workout) {
+        return new Date(workout.completedAt || workout.startTime || Date.now());
+    }
+
+    function startOfDay(date) {
+        const copy = new Date(date);
+        copy.setHours(0, 0, 0, 0);
+        return copy;
+    }
+
+    function calculateWorkoutCardStats(workout) {
+        const derived = calculateWorkoutStats(workout);
+        const exerciseCount = workout.totalExercises || workout.exercises?.length || 0;
+        const setCount = workout.totalSets || derived.totalSets || 0;
+        const volume = derived.totalVolume || 0;
+        const categories = new Set();
+
+        (workout.exercises || []).forEach(exercise => {
+            const category = getCategoryForExercise(exercise);
+            if (category) categories.add(category);
+        });
+
+        const topCategory = categories.size > 0 ? Array.from(categories)[0] : '';
+
+        return {
+            exerciseCount,
+            setCount,
+            volume,
+            completionRate: derived.completionRate,
+            topCategory,
+            highlights: derived.highlights || []
+        };
+    }
+
+    function calculateHistoryOverview(history) {
+        const now = new Date();
+        const today = startOfDay(now);
+        const weekStart = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()));
+        const last30Start = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29));
+
+        let thisWeek = 0;
+        let last30Days = 0;
+        let recentVolume = 0;
+        const categoryCounts = new Map();
+        const exerciseCounts = new Map();
+
+        history.forEach(workout => {
+            const workoutDate = getWorkoutDate(workout);
+            const workoutDay = startOfDay(workoutDate);
+            const cardStats = calculateWorkoutCardStats(workout);
+
+            if (workoutDay >= weekStart) thisWeek += 1;
+            if (workoutDay >= last30Start) {
+                last30Days += 1;
+                recentVolume += cardStats.volume;
+            }
+
+            (workout.exercises || []).forEach(exercise => {
+                const category = getCategoryForExercise(exercise);
+                if (category) categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+                if (exercise?.name) exerciseCounts.set(exercise.name, (exerciseCounts.get(exercise.name) || 0) + 1);
+            });
+        });
+
+        let streak = 0;
+        const uniqueWorkoutDays = new Set(history.map(workout => startOfDay(getWorkoutDate(workout)).toISOString()));
+        for (let cursor = today; uniqueWorkoutDays.has(cursor.toISOString()); cursor = startOfDay(new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - 1))) {
+            streak += 1;
+        }
+
+        const lastWorkout = history[0] ? getWorkoutDate(history[0]) : null;
+        const topCategory = Array.from(categoryCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+        const topExercise = Array.from(exerciseCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+
+        return {
+            thisWeek,
+            last30Days,
+            streak,
+            recentVolume,
+            lastWorkoutLabel: lastWorkout ? lastWorkout.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—',
+            topCategory,
+            topExercise
+        };
+    }
+
+    function getFilteredHistory(history) {
+        const searchTerm = historyViewState.searchTerm.trim().toLowerCase();
+        const category = historyViewState.category;
+        const now = new Date();
+
+        return history.filter(workout => {
+            const workoutDate = getWorkoutDate(workout);
+
+            if (historyViewState.range === '30' && workoutDate < new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29)) {
+                return false;
+            }
+
+            if (historyViewState.range === '90' && workoutDate < new Date(now.getFullYear(), now.getMonth(), now.getDate() - 89)) {
+                return false;
+            }
+
+            const exercises = workout.exercises || [];
+
+            if (category) {
+                const hasCategory = exercises.some(exercise => getCategoryForExercise(exercise) === category);
+                if (!hasCategory) return false;
+            }
+
+            if (searchTerm) {
+                const matchesSearch = exercises.some(exercise => String(exercise.name || '').toLowerCase().includes(searchTerm));
+                if (!matchesSearch) return false;
+            }
+
+            return true;
+        });
+    }
+
+    function renderHistoryOverview(overview) {
+        return `
+            <div class="history-overview">
+                <div class="history-overview-grid">
+                    <div class="history-overview-card">
+                        <div class="history-overview-value">${overview.thisWeek}</div>
+                        <div class="history-overview-label">This Week</div>
+                    </div>
+                    <div class="history-overview-card">
+                        <div class="history-overview-value">${overview.last30Days}</div>
+                        <div class="history-overview-label">Last 30 Days</div>
+                    </div>
+                    <div class="history-overview-card">
+                        <div class="history-overview-value">${overview.streak}</div>
+                        <div class="history-overview-label">Current Streak</div>
+                    </div>
+                    <div class="history-overview-card">
+                        <div class="history-overview-value">${formatVolume(overview.recentVolume)}</div>
+                        <div class="history-overview-label">30 Day Volume</div>
+                    </div>
+                </div>
+                <div class="history-insight-row">
+                    <div class="history-insight-pill"><i class="bi bi-clock-history"></i> Last workout: ${overview.lastWorkoutLabel}</div>
+                    <div class="history-insight-pill"><i class="bi bi-grid"></i> Top category: ${overview.topCategory}</div>
+                    <div class="history-insight-pill"><i class="bi bi-lightning-charge"></i> Most used: ${overview.topExercise}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderHistoryControls() {
+        const categories = (typeof getCategories === 'function' ? getCategories() : []);
+        return `
+            <div class="history-controls">
+                <div class="history-controls-grid">
+                    <input
+                        id="historySearchInput"
+                        class="form-control"
+                        type="text"
+                        placeholder="Search exercises"
+                        value="${historyViewState.searchTerm}"
+                        oninput="MyGymHistoryReporting.updateHistorySearch(this.value)">
+                    <select id="historyCategoryFilter" class="form-select" onchange="MyGymHistoryReporting.updateHistoryCategory(this.value)">
+                        <option value="">All categories</option>
+                        ${categories.map(category => `<option value="${category}" ${historyViewState.category === category ? 'selected' : ''}>${category}</option>`).join('')}
+                    </select>
+                    <select id="historyRangeFilter" class="form-select" onchange="MyGymHistoryReporting.updateHistoryRange(this.value)">
+                        <option value="all" ${historyViewState.range === 'all' ? 'selected' : ''}>All time</option>
+                        <option value="30" ${historyViewState.range === '30' ? 'selected' : ''}>Last 30 days</option>
+                        <option value="90" ${historyViewState.range === '90' ? 'selected' : ''}>Last 90 days</option>
+                    </select>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderWorkoutHistoryCard(workout) {
+        const date = getWorkoutDate(workout);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const durationStr = formatDuration(workout.duration || 0);
+        const exerciseNames = (workout.exercises || []).map(ex => ex.name).join(', ');
+        const exercisePreview = exerciseNames.length > 70 ? exerciseNames.substring(0, 67) + '...' : exerciseNames;
+        const stats = calculateWorkoutCardStats(workout);
+        const highlightText = stats.highlights[0]?.text || `${stats.exerciseCount} exercises • ${stats.setCount} sets`;
+
+        return `
+            <div class="history-card">
+                <div class="history-card-main" onclick="viewWorkoutDetail(${workout.id})">
+                    <div class="history-card-header">
+                        <div>
+                            <div class="history-date">${dateStr}</div>
+                            <div class="history-time">${timeStr}</div>
+                        </div>
+                        <div class="history-duration">
+                            <i class="bi bi-stopwatch"></i> ${durationStr}
+                        </div>
+                    </div>
+                    <div class="history-metric-row">
+                        <span class="history-metric-pill"><i class="bi bi-grid-3x3-gap"></i> ${stats.exerciseCount} exercises</span>
+                        <span class="history-metric-pill"><i class="bi bi-stack"></i> ${stats.setCount} sets</span>
+                        <span class="history-metric-pill"><i class="bi bi-lightning-charge"></i> ${formatVolume(stats.volume)}</span>
+                        <span class="history-metric-pill ${getPerformanceBadgeClass(stats.completionRate)}">${stats.completionRate}% complete</span>
+                    </div>
+                    ${stats.topCategory ? `<div class="history-category-line">Primary focus: ${stats.topCategory}</div>` : ''}
+                    <div class="history-exercises">${exercisePreview}</div>
+                    <div class="history-highlight">${highlightText}</div>
+                </div>
+                <div class="history-card-actions">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation(); viewWorkoutDetail(${workout.id})">
+                        <i class="bi bi-eye"></i> View
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); useAsTemplate(${workout.id})">
+                        <i class="bi bi-arrow-repeat"></i> Reuse
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderHistoryFeed(filteredHistory) {
+        const visibleItems = filteredHistory.slice(0, historyViewState.visibleCount);
+
+        if (filteredHistory.length === 0) {
+            return `
+                <div class="empty-state history-empty-state">
+                    <i class="bi bi-search"></i>
+                    <p>No matching workouts</p>
+                    <p class="text-muted">Try changing your search, category, or date filter.</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="history-feed-header">
+                <div>
+                    <h6 class="mb-1">Recent Workouts</h6>
+                    <div class="history-feed-subtitle">Showing ${visibleItems.length} of ${filteredHistory.length} workouts</div>
+                </div>
+            </div>
+            <div class="history-feed-list">
+                ${visibleItems.map(renderWorkoutHistoryCard).join('')}
+            </div>
+            ${filteredHistory.length > visibleItems.length ? `
+                <button class="btn btn-outline-secondary w-100 history-load-more" onclick="MyGymHistoryReporting.loadMoreHistoryItems()">
+                    <i class="bi bi-plus-circle"></i> Load 10 More
+                </button>
+            ` : ''}
+        `;
+    }
+
     function renderHistory() {
         const container = document.getElementById('historyContent');
         const history = loadWorkoutHistory();
@@ -222,30 +476,14 @@
             return;
         }
 
-        container.innerHTML = history.map(workout => {
-            const date = new Date(workout.startTime);
-            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-            const durationStr = formatDuration(workout.duration || 0);
-            const exerciseNames = workout.exercises.map(ex => ex.name).join(', ');
-            const exercisePreview = exerciseNames.length > 40 ? exerciseNames.substring(0, 37) + '...' : exerciseNames;
+        const filteredHistory = getFilteredHistory(history);
+        const overview = calculateHistoryOverview(history);
 
-            return `
-                <div class="history-card" onclick="viewWorkoutDetail(${workout.id})">
-                    <div class="history-card-header">
-                        <div class="history-date">${dateStr}</div>
-                        <div class="history-duration">
-                            <i class="bi bi-stopwatch"></i> ${durationStr}
-                        </div>
-                    </div>
-                    <div class="history-stats">
-                        ${workout.totalExercises || workout.exercises.length} exercises • ${workout.totalSets || 0} sets
-                    </div>
-                    <div class="history-exercises">${exercisePreview}</div>
-                    <div class="history-time">${timeStr}</div>
-                </div>
-            `;
-        }).join('');
+        container.innerHTML = `
+            ${renderHistoryOverview(overview)}
+            ${renderHistoryControls()}
+            ${renderHistoryFeed(filteredHistory)}
+        `;
     }
 
     function formatDuration(seconds) {
@@ -631,6 +869,30 @@
     function clearAllHistory() {
         if (!confirm('Delete ALL workout history? This cannot be undone!')) return;
         clearWorkoutHistory();
+        historyViewState.visibleCount = 5;
+        renderHistory();
+    }
+
+    function updateHistorySearch(value) {
+        historyViewState.searchTerm = value || '';
+        historyViewState.visibleCount = 5;
+        renderHistory();
+    }
+
+    function updateHistoryCategory(value) {
+        historyViewState.category = value || '';
+        historyViewState.visibleCount = 5;
+        renderHistory();
+    }
+
+    function updateHistoryRange(value) {
+        historyViewState.range = value || 'all';
+        historyViewState.visibleCount = 5;
+        renderHistory();
+    }
+
+    function loadMoreHistoryItems() {
+        historyViewState.visibleCount += 10;
         renderHistory();
     }
 
@@ -777,13 +1039,14 @@
     }
 
     function showCategoryBreakdown() {
-        setDateRange(7);
+        setDateRange(7, document.querySelector('.date-range-btn[onclick="setDateRange(7)"]'));
         getCategoryBreakdownModal().show();
     }
 
-    function setDateRange(days) {
+    function setDateRange(days, targetButton = null) {
         document.querySelectorAll('.date-range-btn').forEach(btn => btn.classList.remove('active'));
-        event?.target?.classList.add('active');
+        const activeButton = targetButton || event?.target;
+        activeButton?.classList.add('active');
         document.getElementById('customDateRange').classList.add('d-none');
 
         const end = new Date();
@@ -856,6 +1119,10 @@
         toggleDetailExercise,
         deleteWorkout,
         clearAllHistory,
+        updateHistorySearch,
+        updateHistoryCategory,
+        updateHistoryRange,
+        loadMoreHistoryItems,
         useAsTemplate,
         getCategoryBreakdownModal,
         getCategoryForExercise,

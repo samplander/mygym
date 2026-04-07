@@ -44,6 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeApp() {
     // Check if there's an active workout
     loadCurrentWorkout();
+
+    const swapExerciseModalEl = document.getElementById('swapExerciseModal');
+    if (swapExerciseModalEl) {
+        swapExerciseModalEl.addEventListener('hidden.bs.modal', () => {
+            currentSwapExerciseId = null;
+            currentSwapCategoryFilter = '';
+            const dropdown = document.getElementById('swapCategorySelect');
+            if (dropdown) dropdown.value = '';
+        });
+    }
     
     // Event listeners
     document.getElementById('coachWorkoutBtn').addEventListener('click', () => showCoachPreferencesModal());
@@ -757,39 +767,75 @@ function renderExercises() {
 }
 
 
+let currentSwapExerciseId = null;
+let currentSwapCategoryFilter = '';
+
+function getSwapCandidates(exercise, selectedCategory = '') {
+    const library = loadExerciseLibrary();
+    const normalizedCategory = String(selectedCategory || '').trim();
+
+    return normalizedCategory
+        ? library.filter(ex => ex.category === normalizedCategory && !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }))
+        : library.filter(ex => !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }));
+}
+
+function populateSwapCategoryDropdown(selectedCategory = '') {
+    const dropdown = document.getElementById('swapCategorySelect');
+    if (!dropdown) return;
+
+    dropdown.innerHTML = '<option value="">All categories</option>' +
+        getCategories().map(category =>
+            `<option value="${category}" ${selectedCategory === category ? 'selected' : ''}>${category}</option>`
+        ).join('');
+
+    dropdown.value = selectedCategory || '';
+}
+
 function swapExercise(exerciseId) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
 
     const library = loadExerciseLibrary();
     const category = MyGymExerciseIdentity.resolveExerciseCategory(exercise, library, '');
+    const defaultCandidates = getSwapCandidates(exercise, category);
+    const allCandidates = getSwapCandidates(exercise, '');
 
-    // Filter library for exercises in the same category (or all if no category)
-    const candidates = category
-        ? library.filter(ex => ex.category === category && !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }))
-        : library.filter(ex => !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }));
-    if (candidates.length === 0) {
+    if (defaultCandidates.length === 0 && allCandidates.length === 0) {
         alert('No alternative exercises available in the library to swap with!');
         return;
     }
 
+    currentSwapExerciseId = exerciseId;
+    currentSwapCategoryFilter = category;
+    populateSwapCategoryDropdown(currentSwapCategoryFilter);
+
     // Show swap exercise modal
     const swapExerciseModal = new bootstrap.Modal(document.getElementById('swapExerciseModal'));
     swapExerciseModal.show();
-    renderSwapOptions(exerciseId);
+    renderSwapOptions(exerciseId, currentSwapCategoryFilter);
 }
 
-function renderSwapOptions(exerciseId) {
+function handleSwapCategoryChange() {
+    if (!currentSwapExerciseId) return;
+    const dropdown = document.getElementById('swapCategorySelect');
+    currentSwapCategoryFilter = dropdown?.value || '';
+    renderSwapOptions(currentSwapExerciseId, currentSwapCategoryFilter);
+}
+
+function renderSwapOptions(exerciseId, selectedCategory = '') {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
 
-    const library = loadExerciseLibrary();
-    const category = MyGymExerciseIdentity.resolveExerciseCategory(exercise, library, '');
-    const candidates = category
-        ? library.filter(ex => ex.category === category && !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }))
-        : library.filter(ex => !MyGymExerciseIdentity.matchesLibraryExerciseRecord(exercise, ex, { allowLegacyNameMatch: true }));
+    const candidates = getSwapCandidates(exercise, selectedCategory);
 
     const container = document.getElementById('swapOptionsContainer');
+    if (candidates.length === 0) {
+        container.innerHTML = `
+            <div class="text-muted small">No exercises found in this category. Try another category.</div>
+        `;
+        return;
+    }
+
     container.innerHTML = candidates.map(candidate => `
         <div class="swap-option" onclick="performSwap(${exerciseId}, ${candidate.id})">
             <h6>${candidate.name}</h6>
@@ -807,6 +853,8 @@ function performSwap(exerciseId, libraryExerciseId) {
     exercise.exerciseLibraryId = libraryExercise.id;
     saveCurrentWorkout();
     renderExercises();
+    currentSwapExerciseId = null;
+    currentSwapCategoryFilter = '';
     const swapExerciseModal = bootstrap.Modal.getInstance(document.getElementById('swapExerciseModal'));
     swapExerciseModal.hide();
 }
@@ -1946,6 +1994,46 @@ function deleteCategory(categoryId) {
     saveCategoryConfig(updated);
     renderCategoryList();
     populateCategoryDropdowns();
+}
+
+function removeBlankCategories() {
+    const categories = loadCategoryConfig();
+    const library = loadExerciseLibrary();
+    const usedCategories = new Set(
+        library
+            .map(exercise => String(exercise.category || '').trim())
+            .filter(Boolean)
+    );
+
+    const removableCategories = categories.filter(category => {
+        const categoryName = String(category.name || '').trim();
+        if (!categoryName) return false;
+        if (category.protected) return false;
+        if (categoryName.toLowerCase() === 'other') return false;
+        return !usedCategories.has(categoryName);
+    });
+
+    if (removableCategories.length === 0) {
+        alert('No blank categories found to remove.');
+        return;
+    }
+
+    const categoryNames = removableCategories.map(category => category.name).join(', ');
+
+    if (!confirm(
+        `Remove ${removableCategories.length} unused categor${removableCategories.length === 1 ? 'y' : 'ies'}?\n\n${categoryNames}`
+    )) {
+        return;
+    }
+
+    const removableIds = new Set(removableCategories.map(category => category.id));
+    const updatedCategories = categories.filter(category => !removableIds.has(category.id));
+
+    saveCategoryConfig(updatedCategories);
+    renderCategoryList();
+    populateCategoryDropdowns();
+
+    alert(`Removed ${removableCategories.length} unused categor${removableCategories.length === 1 ? 'y' : 'ies'}.`);
 }
 
 // ===== CATEGORY BREAKDOWN =====
