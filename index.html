@@ -245,9 +245,14 @@
                     <span class="exercise-count" id="categoryCount">0 categories</span>
                 </div>
                 
-                <button class="btn btn-primary w-100 mb-3" onclick="showAddCategoryModal()">
-                    <i class="bi bi-plus-circle"></i> Add Category
-                </button>
+                <div class="d-flex gap-2 mb-3">
+                    <button class="btn btn-primary flex-fill" onclick="showAddCategoryModal()">
+                        <i class="bi bi-plus-circle"></i> Add Category
+                    </button>
+                    <button class="btn btn-outline-secondary flex-fill" onclick="removeBlankCategories()">
+                        <i class="bi bi-eraser"></i> Remove Blank Categories
+                    </button>
+                </div>
                 
                 <div id="categoryList" class="category-list">
                     <!-- Categories rendered here -->
@@ -667,7 +672,12 @@
                 <div class="modal-body">
                     <!-- Swap Exercise Content -->
                     <div id="swapExerciseContent">
-                        <!-- Content rendered dynamically -->
+                        <div class="mb-3">
+                            <label for="swapCategorySelect" class="form-label">Category</label>
+                            <select id="swapCategorySelect" class="form-select" onchange="handleSwapCategoryChange()">
+                                <option value="">All categories</option>
+                            </select>
+                        </div>
                         <div id="swapOptionsContainer">
                             <!-- Swap options rendered here -->
                         </div>
