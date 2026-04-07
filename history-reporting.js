@@ -73,15 +73,33 @@
             });
 
             let totalVolume = 0;
-            const categoryBreakdown = {};
+            let totalCardioSeconds = 0;
+            const rawCategoryBreakdown = {};
+            const categoryModes = {};
 
             dayWorkouts.forEach(workout => {
-                workout.exercises.forEach(exercise => {
+                (workout.exercises || []).forEach(exercise => {
                     const category = getCategoryForExercise(exercise);
-                    exercise.sets.forEach(set => {
-                        const volume = (set.actual?.weight || 0) * (set.actual?.reps || 0);
-                        totalVolume += volume;
-                        categoryBreakdown[category] = (categoryBreakdown[category] || 0) + volume;
+                    (exercise.sets || []).forEach(set => {
+                        const actualWeight = set.actual?.weight || 0;
+                        const actualReps = set.actual?.reps || 0;
+                        const actualTime = set.actual?.time || 0;
+                        const isCompleted = set.completed !== undefined
+                            ? set.completed
+                            : (actualWeight > 0 || actualReps > 0 || actualTime > 0);
+
+                        if (!isCompleted) return;
+
+                        if (exercise.timeMode === true) {
+                            totalCardioSeconds += actualTime;
+                            rawCategoryBreakdown[category] = (rawCategoryBreakdown[category] || 0) + actualTime;
+                            categoryModes[category] = 'time';
+                        } else {
+                            const volume = actualWeight * actualReps;
+                            totalVolume += volume;
+                            rawCategoryBreakdown[category] = (rawCategoryBreakdown[category] || 0) + volume;
+                            categoryModes[category] = 'volume';
+                        }
                     });
                 });
             });
@@ -90,27 +108,54 @@
                 date,
                 dateStr,
                 volume: totalVolume,
+                cardioSeconds: totalCardioSeconds,
                 workoutCount: dayWorkouts.length,
-                categoryBreakdown
+                rawCategoryBreakdown,
+                categoryModes,
+                categoryBreakdown: {},
+                totalContribution: 0,
+                activityScore: 0
             });
         }
+
+        const maxVolume = Math.max(...heatmapData.map(day => day.volume), 0);
+        const maxCardioSeconds = Math.max(...heatmapData.map(day => day.cardioSeconds), 0);
+
+        heatmapData.forEach(day => {
+            const normalizedStrength = maxVolume > 0 ? (day.volume / maxVolume) : 0;
+            const normalizedCardio = maxCardioSeconds > 0 ? (day.cardioSeconds / maxCardioSeconds) : 0;
+            day.activityScore = Math.max(normalizedStrength, normalizedCardio);
+
+            const categoryBreakdown = {};
+            let totalContribution = 0;
+
+            Object.entries(day.rawCategoryBreakdown).forEach(([category, rawValue]) => {
+                const normalizedValue = day.categoryModes?.[category] === 'time'
+                    ? (maxCardioSeconds > 0 ? rawValue / maxCardioSeconds : 0)
+                    : (maxVolume > 0 ? rawValue / maxVolume : 0);
+
+                if (normalizedValue <= 0) return;
+                categoryBreakdown[category] = normalizedValue;
+                totalContribution += normalizedValue;
+            });
+
+            day.categoryBreakdown = categoryBreakdown;
+            day.totalContribution = totalContribution;
+        });
 
         return heatmapData;
     }
 
-    function getVolumeIntensity(volume, maxVolume) {
-        if (volume === 0) return 0;
-        if (maxVolume === 0) return 1;
-
-        const percentage = (volume / maxVolume) * 100;
-        if (percentage >= 75) return 4;
-        if (percentage >= 50) return 3;
-        if (percentage >= 25) return 2;
+    function getVolumeIntensity(score) {
+        if (score <= 0) return 0;
+        if (score >= 0.75) return 4;
+        if (score >= 0.5) return 3;
+        if (score >= 0.25) return 2;
         return 1;
     }
 
-    function buildCategoryGradient(categoryBreakdown, totalVolume) {
-        if (totalVolume === 0 || Object.keys(categoryBreakdown).length === 0) {
+    function buildCategoryGradient(categoryBreakdown, totalContribution) {
+        if (totalContribution === 0 || Object.keys(categoryBreakdown).length === 0) {
             return null;
         }
 
@@ -118,8 +163,8 @@
         let gradientParts = [];
         let currentPercent = 0;
 
-        sorted.forEach(([category, volume]) => {
-            const percent = (volume / totalVolume) * 100;
+        sorted.forEach(([category, contribution]) => {
+            const percent = (contribution / totalContribution) * 100;
             const color = getCategoryColor(category);
             const endPercent = currentPercent + percent;
             gradientParts.push(`${color} ${currentPercent.toFixed(1)}% ${endPercent.toFixed(1)}%`);
@@ -129,12 +174,12 @@
         return `linear-gradient(to right, ${gradientParts.join(', ')})`;
     }
 
-    function buildCategoryTooltip(categoryBreakdown, totalVolume) {
-        if (totalVolume === 0) return '';
+    function buildCategoryTooltip(categoryBreakdown, totalContribution) {
+        if (totalContribution === 0) return '';
 
         const sorted = Object.entries(categoryBreakdown).sort((a, b) => b[1] - a[1]);
-        return sorted.map(([cat, vol]) => {
-            const pct = ((vol / totalVolume) * 100).toFixed(0);
+        return sorted.map(([cat, contribution]) => {
+            const pct = ((contribution / totalContribution) * 100).toFixed(0);
             return `${cat} ${pct}%`;
         }).join(', ');
     }
@@ -144,9 +189,9 @@
         if (!container) return;
 
         const heatmapData = generateHeatmapData();
-        const maxVolume = Math.max(...heatmapData.map(d => d.volume));
         const totalWorkouts = heatmapData.reduce((sum, d) => sum + d.workoutCount, 0);
         const totalVolume = heatmapData.reduce((sum, d) => sum + d.volume, 0);
+        const totalCardioSeconds = heatmapData.reduce((sum, d) => sum + d.cardioSeconds, 0);
         const usedCategories = new Set();
 
         heatmapData.forEach(day => {
@@ -157,25 +202,30 @@
 
         heatmapData.forEach(day => {
             const isToday = day.dateStr === new Date().toISOString().split('T')[0];
-            let tooltipText = `${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}\n${formatVolume(day.volume)}`;
+            let tooltipText = `${day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 
             if (day.workoutCount > 0) {
-                tooltipText += ` (${day.workoutCount} workout${day.workoutCount > 1 ? 's' : ''})`;
-                const catBreakdown = buildCategoryTooltip(day.categoryBreakdown, day.volume);
+                tooltipText += `\n${formatVolume(day.volume)} volume`;
+                if (day.cardioSeconds > 0) {
+                    tooltipText += `\n${formatDuration(day.cardioSeconds)} cardio`;
+                }
+                tooltipText += `\n${day.workoutCount} workout${day.workoutCount > 1 ? 's' : ''}`;
+                const catBreakdown = buildCategoryTooltip(day.categoryBreakdown, day.totalContribution);
                 if (catBreakdown) tooltipText += `\n${catBreakdown}`;
             } else {
-                tooltipText += ' (No workout)';
+                tooltipText += '\nNo workout';
             }
 
-            const gradient = buildCategoryGradient(day.categoryBreakdown, day.volume);
+            const gradient = buildCategoryGradient(day.categoryBreakdown, day.totalContribution);
             const cellStyle = gradient ? `style="background: ${gradient}"` : '';
-            const cellClass = gradient ? '' : `heatmap-level-${getVolumeIntensity(day.volume, maxVolume)}`;
+            const cellClass = gradient ? '' : `heatmap-level-${getVolumeIntensity(day.activityScore)}`;
 
             gridHTML += `
                 <div class="heatmap-cell ${cellClass} ${isToday ? 'heatmap-today' : ''}"
                      ${cellStyle}
                      title="${tooltipText}"
                      data-volume="${day.volume}"
+                     data-cardio-seconds="${day.cardioSeconds}"
                      data-date="${day.dateStr}">
                 </div>
             `;
@@ -194,7 +244,7 @@
 
         const summaryHTML = `
             <div class="heatmap-summary">
-                ${totalWorkouts} workout${totalWorkouts !== 1 ? 's' : ''} • ${formatVolume(totalVolume)}
+                ${totalWorkouts} workout${totalWorkouts !== 1 ? 's' : ''} • ${formatVolume(totalVolume)} volume${totalCardioSeconds > 0 ? ` • ${formatDuration(totalCardioSeconds)} cardio` : ''}
             </div>
         `;
 
