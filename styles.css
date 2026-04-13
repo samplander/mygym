@@ -304,6 +304,7 @@ body {
     justify-content: center;
     gap: 8px;
     flex-wrap: wrap;
+    margin-bottom: 12px;
 }
 
 .home-link-btn {
@@ -315,10 +316,17 @@ body {
     padding: 8px 12px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     font-size: 13px;
     font-weight: 600;
     transition: all 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
 }
 
 .home-link-btn:hover {
