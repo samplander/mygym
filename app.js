@@ -143,13 +143,13 @@ function renderHomeStatusCard() {
 
         container.innerHTML = `
             <div class="home-status-eyebrow">Active workout</div>
-            <div class="home-status-title">Ready to jump back in?</div>
+            <div class="home-status-title">Pick up where you left off</div>
             <div class="home-status-meta">
                 <span>${exerciseCount} exercise${exerciseCount === 1 ? '' : 's'}</span>
                 <span>•</span>
                 <span>${totalSets} set${totalSets === 1 ? '' : 's'}</span>
                 <span>•</span>
-                <span>${elapsedMinutes} min</span>
+                <span>${elapsedMinutes} min elapsed</span>
             </div>
         `;
 
@@ -163,7 +163,7 @@ function renderHomeStatusCard() {
             <div class="home-status-eyebrow">No active workout</div>
             <div class="home-status-title">Ready to train?</div>
             <div class="home-status-meta">
-                <span>Start a workout fast, or get a guided session from the coach.</span>
+                <span>Start fast, or let the coach build your session.</span>
             </div>
         `;
 
