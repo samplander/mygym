@@ -1,6 +1,7 @@
 // State Management
 let currentWorkout = null;
 let timerInterval = null;
+let currentExerciseMenuId = null;
 
 window.MyGymAppState = {
     getCurrentWorkout: () => currentWorkout,
@@ -129,6 +130,7 @@ function renderVolumeHeatmap() { return MyGymHistoryReporting.renderVolumeHeatma
 
 // Screen Management
 function showHomeScreen() {
+    closeExerciseMenu();
     renderQuickStats(); // Refresh stats when returning to home
     renderVolumeHeatmap(); // Refresh heatmap
     document.getElementById('homeScreen').classList.remove('d-none');
@@ -138,6 +140,7 @@ function showHomeScreen() {
 }
 
 function showWorkoutScreen() {
+    closeExerciseMenu();
     document.getElementById('homeScreen').classList.add('d-none');
     document.getElementById('workoutScreen').classList.remove('d-none');
     document.getElementById('historyScreen').classList.add('d-none');
@@ -148,6 +151,7 @@ function showWorkoutScreen() {
 }
 
 function showHistoryScreen() {
+    closeExerciseMenu();
     document.getElementById('homeScreen').classList.add('d-none');
     document.getElementById('workoutScreen').classList.add('d-none');
     document.getElementById('historyScreen').classList.remove('d-none');
@@ -156,6 +160,7 @@ function showHistoryScreen() {
 }
 
 function showSettingsScreen() {
+    closeExerciseMenu();
     document.getElementById('homeScreen').classList.add('d-none');
     document.getElementById('workoutScreen').classList.add('d-none');
     document.getElementById('historyScreen').classList.add('d-none');
@@ -486,6 +491,9 @@ function saveExercise() {
 function deleteExercise(exerciseId) {
     if (confirm('Delete this exercise and all its sets?')) {
         currentWorkout.exercises = currentWorkout.exercises.filter(ex => ex.id !== exerciseId);
+        if (currentExerciseMenuId === exerciseId) {
+            currentExerciseMenuId = null;
+        }
         saveCurrentWorkout();
         renderExercises();
     }
@@ -499,7 +507,6 @@ function moveExercise(exerciseId, direction) {
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     if (newIndex < 0 || newIndex >= exercises.length) return;
     
-    // Swap positions
     [exercises[currentIndex], exercises[newIndex]] = [exercises[newIndex], exercises[currentIndex]];
     saveCurrentWorkout();
     renderExercises();
@@ -589,9 +596,9 @@ function toggleExercise(exerciseId) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
     
+    closeExerciseMenu();
     const isOpening = exercise.collapsed;
     
-    // If opening in accordion mode, close all others
     if (isOpening && currentWorkout.accordionMode) {
         currentWorkout.exercises.forEach(ex => {
             ex.collapsed = ex.id !== exerciseId;
@@ -643,28 +650,25 @@ function toggleShowPrevious(exerciseId) {
 function toggleAllExercises() {
     if (!currentWorkout || currentWorkout.exercises.length === 0) return;
     
-    // Check if any exercise is expanded
+    closeExerciseMenu();
     const anyExpanded = currentWorkout.exercises.some(ex => !ex.collapsed);
-    
-    const btnText = document.getElementById('toggleAllText');
-    const btnIcon = document.querySelector('#toggleAllBtn i');
+    const btn = document.getElementById('toggleAllBtn');
+    const btnIcon = btn?.querySelector('i');
     
     if (anyExpanded) {
-        // Collapse All - re-enable accordion mode
         currentWorkout.exercises.forEach(exercise => {
             exercise.collapsed = true;
         });
         currentWorkout.accordionMode = true;
-        btnText.textContent = 'Expand All';
-        btnIcon.className = 'bi bi-arrows-expand';
+        if (btn) btn.title = 'Expand all exercises';
+        if (btnIcon) btnIcon.className = 'bi bi-arrows-expand';
     } else {
-        // Expand All - disable accordion mode (allow multiple open)
         currentWorkout.exercises.forEach(exercise => {
             exercise.collapsed = false;
         });
         currentWorkout.accordionMode = false;
-        btnText.textContent = 'Collapse All';
-        btnIcon.className = 'bi bi-arrows-collapse';
+        if (btn) btn.title = 'Collapse all exercises';
+        if (btnIcon) btnIcon.className = 'bi bi-arrows-collapse';
     }
     
     saveCurrentWorkout();
@@ -712,6 +716,36 @@ function restoreUIState() {
     }
 }
 
+function toggleExerciseMenu(exerciseId) {
+    currentExerciseMenuId = currentExerciseMenuId === exerciseId ? null : exerciseId;
+    renderExercises();
+}
+
+function closeExerciseMenu() {
+    if (currentExerciseMenuId !== null) {
+        currentExerciseMenuId = null;
+    }
+}
+
+function updateWorkoutPrimaryActions() {
+    const addBtn = document.getElementById('addExerciseBtn');
+    const completeBtn = document.getElementById('completeWorkoutBtn');
+    if (!addBtn || !completeBtn || !currentWorkout) return;
+
+    const totalSets = currentWorkout.exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
+    const completedSets = currentWorkout.exercises.reduce((sum, ex) => sum + ex.sets.filter(set => set.completed).length, 0);
+    const hasProgress = completedSets > 0;
+
+    addBtn.classList.toggle('btn-primary', !hasProgress);
+    addBtn.classList.toggle('btn-outline-primary', hasProgress);
+    completeBtn.classList.toggle('btn-success', hasProgress);
+    completeBtn.classList.toggle('btn-outline-secondary', !hasProgress);
+    completeBtn.innerHTML = hasProgress
+        ? '<i class="bi bi-check-circle"></i> Finish Workout'
+        : '<i class="bi bi-flag"></i> Finish Workout';
+    completeBtn.disabled = totalSets === 0;
+}
+
 // Rendering
 function renderExercises() {
     const container = document.getElementById('exercisesList');
@@ -726,29 +760,58 @@ function renderExercises() {
         return;
     }
     
-    container.innerHTML = currentWorkout.exercises.map((exercise, index) => `
-        <div class="exercise-card">
-            <div class="exercise-header" onclick="event.target.closest('.exercise-header').querySelector('.delete-exercise-btn')?.contains(event.target) || event.target.closest('.exercise-header').querySelector('.toggle-time-btn')?.contains(event.target) || event.target.closest('.exercise-header').querySelector('.exercise-history-btn')?.contains(event.target) || event.target.closest('.exercise-header').querySelector('.reorder-up-btn')?.contains(event.target) || event.target.closest('.exercise-header').querySelector('.reorder-down-btn')?.contains(event.target) ? null : toggleExercise(${exercise.id})">
+    container.innerHTML = currentWorkout.exercises.map((exercise, index) => {
+        const completedSets = exercise.sets.filter(set => set.completed).length;
+        const totalSets = exercise.sets.length;
+        const isMenuOpen = currentExerciseMenuId === exercise.id;
+        return `
+        <div class="exercise-card ${completedSets === totalSets && totalSets > 0 ? 'exercise-card-complete' : ''}">
+            <div class="exercise-header" onclick="event.target.closest('.exercise-menu') || event.target.closest('.exercise-history-btn') ? null : toggleExercise(${exercise.id})">
                 <div class="exercise-header-left">
                     <i class="bi bi-chevron-down chevron ${exercise.collapsed ? 'collapsed' : ''}"></i>
-                    <h6>${exercise.name}</h6>
+                    <div class="exercise-title-stack">
+                        <h6>${exercise.name}</h6>
+                        <div class="exercise-meta-row">
+                            <span class="exercise-set-progress">${completedSets}/${totalSets} sets</span>
+                            ${exercise.timeMode ? '<span class="exercise-mode-pill">Time</span>' : '<span class="exercise-mode-pill">Reps</span>'}
+                        </div>
+                    </div>
                 </div>
                 <div class="exercise-header-right">
-                    <button class="reorder-btn reorder-up-btn" onclick="event.stopPropagation(); moveExercise(${exercise.id}, 'up')" title="Move up" ${index === 0 ? 'disabled' : ''}>
-                        <i class="bi bi-chevron-up"></i>
-                    </button>
-                    <button class="reorder-btn reorder-down-btn" onclick="event.stopPropagation(); moveExercise(${exercise.id}, 'down')" title="Move down" ${index === currentWorkout.exercises.length - 1 ? 'disabled' : ''}>
-                        <i class="bi bi-chevron-down"></i>
-                    </button>
-                    <button class="toggle-time-btn" onclick="event.stopPropagation(); toggleTimeMode(${exercise.id})" title="${exercise.timeMode ? 'Switch to Reps' : 'Switch to Time'}">
-                        <i class="bi bi-${exercise.timeMode ? '123' : 'stopwatch'}"></i>
-                    </button>
                     <button class="exercise-history-btn" onclick="event.stopPropagation(); showCurrentWorkoutExerciseHistory(${exercise.id})" title="View exercise history">
                         <i class="bi bi-graph-up"></i>
                     </button>
-                    <button class="delete-exercise-btn" onclick="event.stopPropagation(); deleteExercise(${exercise.id})">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="exercise-menu-wrap">
+                        <button class="exercise-menu-btn" onclick="event.stopPropagation(); toggleExerciseMenu(${exercise.id})" title="Exercise options">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <div class="exercise-menu ${isMenuOpen ? 'show' : ''}">
+                            <button class="exercise-menu-item" onclick="toggleTimeMode(${exercise.id}); event.stopPropagation();">
+                                <i class="bi bi-${exercise.timeMode ? '123' : 'stopwatch'}"></i>
+                                <span>${exercise.timeMode ? 'Switch to reps' : 'Switch to time'}</span>
+                            </button>
+                            <button class="exercise-menu-item" onclick="toggleShowPrevious(${exercise.id}); event.stopPropagation();">
+                                <i class="bi bi-clock-history"></i>
+                                <span>${exercise.showPrevious ? 'Hide previous set' : 'Show previous set'}</span>
+                            </button>
+                            <button class="exercise-menu-item" onclick="moveExercise(${exercise.id}, 'up'); event.stopPropagation();" ${index === 0 ? 'disabled' : ''}>
+                                <i class="bi bi-chevron-up"></i>
+                                <span>Move up</span>
+                            </button>
+                            <button class="exercise-menu-item" onclick="moveExercise(${exercise.id}, 'down'); event.stopPropagation();" ${index === currentWorkout.exercises.length - 1 ? 'disabled' : ''}>
+                                <i class="bi bi-chevron-down"></i>
+                                <span>Move down</span>
+                            </button>
+                            <button class="exercise-menu-item" onclick="swapExercise(${exercise.id}); event.stopPropagation();">
+                                <i class="bi bi-arrow-left-right"></i>
+                                <span>Swap exercise</span>
+                            </button>
+                            <button class="exercise-menu-item danger" onclick="deleteExercise(${exercise.id}); event.stopPropagation();">
+                                <i class="bi bi-trash"></i>
+                                <span>Delete exercise</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="exercise-body ${exercise.collapsed ? 'collapsed' : ''}">
@@ -757,13 +820,12 @@ function renderExercises() {
                     <button class="add-set-btn" onclick="addSet(${exercise.id})">
                         <i class="bi bi-plus-lg"></i> Add Set
                     </button>
-                    <button class="swap-exercise-btn" onclick="swapExercise(${exercise.id})">
-                        <i class="bi bi-arrow-left-right"></i>
-                    </button>
                 </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
+
+    updateWorkoutPrimaryActions();
 }
 
 
@@ -868,9 +930,8 @@ function renderSet(exerciseId, exercise) {
     const isTimeMode = exercise.timeMode || false;
 
     return exercise.sets.map((set, index) => {
-        // Get previous set for reference
         const previousSet = index > 0 ? exercise.sets[index - 1] : null;
-        let previousText = '---';
+        let previousText = 'No previous set';
         if (previousSet) {
             if (isTimeMode) {
                 previousText = `${previousSet.actual.time || 0}s`;
@@ -883,49 +944,50 @@ function renderSet(exerciseId, exercise) {
 
         return `
             <div class="set-row ${exercise.detailsHidden ? 'hidden' : ''} ${set.completed ? 'set-completed' : ''}">
-                <div class="set-number-badge">#${index + 1}</div>
-                ${exercise.showPrevious ? `<div class="set-previous">${previousText}</div>` : ''}
-                
-                <!-- Completion Toggle Button (Left side for easy thumb reach) -->
                 <button class="set-complete-btn ${set.completed ? 'completed' : ''}" 
                         onclick="toggleSetCompletion(${exerciseId}, ${index})"
                         title="${set.completed ? 'Mark incomplete' : 'Mark complete'}">
                     <i class="bi bi-${set.completed ? 'check-circle-fill' : 'circle'}"></i>
                 </button>
-                
-                ${isTimeMode ? `
-                    <!-- Time Mode -->
-                    <div class="set-input-group">
-                        <input type="number" 
-                               class="set-input" 
-                               value="${set.actual.time}"
-                               placeholder="0"
-                               ${set.completed ? 'disabled' : ''}
-                               onchange="handleDirectInput(${exerciseId}, ${index}, 'time', this.value)"
-                               inputmode="numeric">
-                        <span class="set-input-unit">s</span>
+
+                <div class="set-main-content">
+                    <div class="set-topline">
+                        <div class="set-number-badge">Set ${index + 1}</div>
+                        ${exercise.showPrevious ? `<div class="set-previous">Prev: ${previousText}</div>` : ''}
                     </div>
-                ` : `
-                    <!-- Weight/Reps Mode -->
-                    <div class="set-input-group">
-                        <input type="number" 
-                               class="set-input" 
-                               value="${set.actual.weight}"
-                               placeholder="0"
-                               ${set.completed ? 'disabled' : ''}
-                               onchange="handleDirectInput(${exerciseId}, ${index}, 'weight', this.value)"
-                               inputmode="numeric">
-                        <span class="set-input-unit">kg</span>
-                        <span class="set-input-separator">×</span>
-                        <input type="number" 
-                               class="set-input set-input-reps" 
-                               value="${set.actual.reps}"
-                               placeholder="0"
-                               ${set.completed ? 'disabled' : ''}
-                               onchange="handleDirectInput(${exerciseId}, ${index}, 'reps', this.value)"
-                               inputmode="numeric">
-                    </div>
-                `}
+                    ${isTimeMode ? `
+                        <div class="set-input-group time-mode">
+                            <input type="number" 
+                                   class="set-input" 
+                                   value="${set.actual.time}"
+                                   placeholder="0"
+                                   ${set.completed ? 'disabled' : ''}
+                                   onchange="handleDirectInput(${exerciseId}, ${index}, 'time', this.value)"
+                                   inputmode="numeric">
+                            <span class="set-input-unit">sec</span>
+                        </div>
+                    ` : `
+                        <div class="set-input-group">
+                            <input type="number" 
+                                   class="set-input" 
+                                   value="${set.actual.weight}"
+                                   placeholder="0"
+                                   ${set.completed ? 'disabled' : ''}
+                                   onchange="handleDirectInput(${exerciseId}, ${index}, 'weight', this.value)"
+                                   inputmode="numeric">
+                            <span class="set-input-unit">kg</span>
+                            <span class="set-input-separator">×</span>
+                            <input type="number" 
+                                   class="set-input set-input-reps" 
+                                   value="${set.actual.reps}"
+                                   placeholder="0"
+                                   ${set.completed ? 'disabled' : ''}
+                                   onchange="handleDirectInput(${exerciseId}, ${index}, 'reps', this.value)"
+                                   inputmode="numeric">
+                            <span class="set-input-unit">reps</span>
+                        </div>
+                    `}
+                </div>
                 
                 <button class="set-delete-btn" onclick="deleteSet(${exerciseId}, ${index})" title="Delete set">
                     <i class="bi bi-trash"></i>
