@@ -675,45 +675,15 @@ function toggleAllExercises() {
     renderExercises();
 }
 
-// Workout UI Toggle (Header/Footer Hide/Show)
-let isUIHidden = false;
-
-function toggleWorkoutUI() {
-    isUIHidden = !isUIHidden;
-    
+function restoreUIState() {
     const header = document.querySelector('#workoutScreen .sticky-header');
     const bottomNav = document.querySelector('#workoutScreen .bottom-nav');
     const content = document.querySelector('#workoutScreen .workout-content');
-    const toggleBtn = document.getElementById('toggleUIBtn');
-    const toggleIcon = toggleBtn.querySelector('i');
-    
-    if (isUIHidden) {
-        // Hide header and footer
-        header.classList.add('hidden');
-        bottomNav.classList.add('hidden');
-        content.classList.add('fullscreen');
-        toggleBtn.classList.add('fullscreen');
-        toggleIcon.className = 'bi bi-eye';
-    } else {
-        // Show header and footer
-        header.classList.remove('hidden');
-        bottomNav.classList.remove('hidden');
-        content.classList.remove('fullscreen');
-        toggleBtn.classList.remove('fullscreen');
-        toggleIcon.className = 'bi bi-eye-slash';
-    }
-    
-    // Save state to localStorage
-    localStorage.setItem('workoutUIHidden', isUIHidden);
-}
+    if (!header || !bottomNav || !content) return;
 
-function restoreUIState() {
-    const savedState = localStorage.getItem('workoutUIHidden');
-    if (savedState === 'true' && !isUIHidden) {
-        toggleWorkoutUI();
-    } else if (savedState === 'false' && isUIHidden) {
-        toggleWorkoutUI();
-    }
+    header.classList.remove('hidden');
+    bottomNav.classList.remove('hidden');
+    content.classList.remove('fullscreen');
 }
 
 function toggleExerciseMenu(exerciseId) {
@@ -778,14 +748,15 @@ function renderExercises() {
                     </div>
                 </div>
                 <div class="exercise-header-right">
-                    <button class="exercise-history-btn" onclick="event.stopPropagation(); showCurrentWorkoutExerciseHistory(${exercise.id})" title="View exercise history">
-                        <i class="bi bi-graph-up"></i>
-                    </button>
                     <div class="exercise-menu-wrap">
                         <button class="exercise-menu-btn" onclick="event.stopPropagation(); toggleExerciseMenu(${exercise.id})" title="Exercise options">
                             <i class="bi bi-three-dots-vertical"></i>
                         </button>
                         <div class="exercise-menu ${isMenuOpen ? 'show' : ''}">
+                            <button class="exercise-menu-item" onclick="showCurrentWorkoutExerciseHistory(${exercise.id}); event.stopPropagation();">
+                                <i class="bi bi-graph-up"></i>
+                                <span>View history</span>
+                            </button>
                             <button class="exercise-menu-item" onclick="toggleTimeMode(${exercise.id}); event.stopPropagation();">
                                 <i class="bi bi-${exercise.timeMode ? '123' : 'stopwatch'}"></i>
                                 <span>${exercise.timeMode ? 'Switch to reps' : 'Switch to time'}</span>
