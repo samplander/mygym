@@ -39,44 +39,52 @@
             
             <!-- Title -->
             <h1 class="home-title mb-2">RepEtition</h1>
-            <p class="home-tagline mb-4">Train smarter, achieve your goals</p>
+            <p class="home-tagline mb-3">Serious workout tracking, no fluff</p>
+
+            <!-- Current State -->
+            <div id="homeStatusCard" class="home-status-card mb-3">
+                <!-- Status card rendered by JavaScript -->
+            </div>
             
+            <!-- Action Buttons -->
+            <div class="home-actions w-100" style="max-width: 320px;">
+                <button id="continueWorkoutBtn" class="glass-btn glass-btn-primary mb-2 d-none">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <span>Continue Workout</span>
+                </button>
+                <button id="startWorkoutBtn" class="glass-btn glass-btn-primary mb-2">
+                    <i class="bi bi-play-circle-fill"></i>
+                    <span>Start Workout</span>
+                </button>
+                <button id="coachWorkoutBtn" class="glass-btn glass-btn-secondary mb-3">
+                    <i id="coachBtnIcon" class="bi bi-robot"></i>
+                    <span id="coachBtnText">AI Coach Workout</span>
+                </button>
+
+                <div class="home-secondary-links">
+                    <button class="home-link-btn" onclick="showHistoryScreen()">
+                        <i class="bi bi-graph-up"></i>
+                        <span>History</span>
+                    </button>
+                    <button class="home-link-btn" onclick="showSettingsScreen()">
+                        <i class="bi bi-gear"></i>
+                        <span>Settings</span>
+                    </button>
+                    <button class="home-link-btn d-none" onclick="showCoachPreferencesModal()">
+                        <i class="bi bi-sliders"></i>
+                        <span>Customize Coach</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Quick Stats Preview -->
             <div id="quickStats" class="quick-stats mb-3">
                 <!-- Stats will be rendered by JavaScript -->
             </div>
             
             <!-- Volume Heatmap -->
-            <div id="volumeHeatmap" class="volume-heatmap mb-4">
+            <div id="volumeHeatmap" class="volume-heatmap home-heatmap mb-4">
                 <!-- Heatmap will be rendered by JavaScript -->
-            </div>
-            
-            <!-- Action Buttons -->
-            <div class="home-actions w-100" style="max-width: 320px;">
-                <button id="coachWorkoutBtn" class="glass-btn glass-btn-primary mb-3">
-                    <i id="coachBtnIcon" class="bi bi-robot"></i>
-                    <span id="coachBtnText">AI Coach Workout</span>
-                </button>
-                 <button class="glass-btn glass-btn-secondary mb-3 d-none" onclick="showCoachPreferencesModal()">
-                    <i class="bi bi-sliders"></i>
-                    <span>Customize AI Coach</span>
-                </button>
-                <button id="startWorkoutBtn" class="glass-btn glass-btn-secondary mb-3">
-                    <i class="bi bi-play-circle-fill"></i>
-                    <span>Start Blank Workout</span>
-                </button>
-                <button id="continueWorkoutBtn" class="glass-btn glass-btn-secondary mb-3">
-                    <i class="bi bi-arrow-repeat"></i>
-                    <span>Continue Workout</span>
-                </button>
-                <button class="glass-btn glass-btn-secondary mb-3" onclick="showHistoryScreen()">
-                    <i class="bi bi-graph-up"></i>
-                    <span>View History</span>
-                </button>
-                <button class="glass-btn glass-btn-secondary" onclick="showSettingsScreen()">
-                    <i class="bi bi-gear"></i>
-                    <span>Settings</span>
-                </button>
             </div>
         </div>
     </div>

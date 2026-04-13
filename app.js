@@ -128,11 +128,59 @@ function buildCategoryTooltip(categoryBreakdown, totalVolume) { return MyGymHist
 
 function renderVolumeHeatmap() { return MyGymHistoryReporting.renderVolumeHeatmap(); }
 
+function renderHomeStatusCard() {
+    const container = document.getElementById('homeStatusCard');
+    const continueBtn = document.getElementById('continueWorkoutBtn');
+    const startBtn = document.getElementById('startWorkoutBtn');
+    const coachBtn = document.getElementById('coachWorkoutBtn');
+    if (!container || !continueBtn || !startBtn || !coachBtn) return;
+
+    if (currentWorkout && Array.isArray(currentWorkout.exercises)) {
+        const exerciseCount = currentWorkout.exercises.length;
+        const totalSets = currentWorkout.exercises.reduce((sum, ex) => sum + (ex.sets?.length || 0), 0);
+        const elapsedMs = currentWorkout.startTime ? Date.now() - new Date(currentWorkout.startTime).getTime() : 0;
+        const elapsedMinutes = Math.max(0, Math.floor(elapsedMs / 60000));
+
+        container.innerHTML = `
+            <div class="home-status-eyebrow">Active workout</div>
+            <div class="home-status-title">Ready to jump back in?</div>
+            <div class="home-status-meta">
+                <span>${exerciseCount} exercise${exerciseCount === 1 ? '' : 's'}</span>
+                <span>•</span>
+                <span>${totalSets} set${totalSets === 1 ? '' : 's'}</span>
+                <span>•</span>
+                <span>${elapsedMinutes} min</span>
+            </div>
+        `;
+
+        continueBtn.classList.remove('d-none');
+        startBtn.classList.remove('glass-btn-primary');
+        startBtn.classList.add('glass-btn-secondary');
+        coachBtn.classList.remove('glass-btn-primary');
+        coachBtn.classList.add('glass-btn-secondary');
+    } else {
+        container.innerHTML = `
+            <div class="home-status-eyebrow">No active workout</div>
+            <div class="home-status-title">Ready to train?</div>
+            <div class="home-status-meta">
+                <span>Start a workout fast, or get a guided session from the coach.</span>
+            </div>
+        `;
+
+        continueBtn.classList.add('d-none');
+        startBtn.classList.add('glass-btn-primary');
+        startBtn.classList.remove('glass-btn-secondary');
+        coachBtn.classList.remove('glass-btn-primary');
+        coachBtn.classList.add('glass-btn-secondary');
+    }
+}
+
 // Screen Management
 function showHomeScreen() {
     closeExerciseMenu();
-    renderQuickStats(); // Refresh stats when returning to home
-    renderVolumeHeatmap(); // Refresh heatmap
+    renderHomeStatusCard();
+    renderQuickStats();
+    renderVolumeHeatmap();
     document.getElementById('homeScreen').classList.remove('d-none');
     document.getElementById('workoutScreen').classList.add('d-none');
     document.getElementById('historyScreen').classList.add('d-none');
@@ -178,6 +226,7 @@ function startWorkout() {
         exercises: []
     };
     saveCurrentWorkout();
+    renderHomeStatusCard();
     showWorkoutScreen();
 }
 
@@ -396,6 +445,7 @@ function completeWorkout() {
         // Clear current workout
         currentWorkout = null;
         clearCurrentWorkout();
+        renderHomeStatusCard();
         
         // Stop timer
         stopTimer();
