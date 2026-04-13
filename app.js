@@ -566,20 +566,22 @@ function deleteSet(exerciseId, setIndex) {
     }
 }
 
-function handleDirectInput(exerciseId, setIndex, field, value) {
+function handleDirectInput(exerciseId, setIndex, field, value, inputElement) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise || !exercise.sets[setIndex]) return;
     
-    // Prevent editing locked/completed sets
     if (exercise.sets[setIndex].completed) return;
     
     let numValue = parseInt(value) || 0;
     if (numValue < 0) numValue = 0;
     
-    // Update both actual and planned to keep data consistent
     exercise.sets[setIndex].actual[field] = numValue;
     exercise.sets[setIndex].planned[field] = numValue;
     saveCurrentWorkout();
+
+    if (inputElement && numValue > 0) {
+        focusNextWorkoutInput(exerciseId, setIndex, field, inputElement);
+    }
 }
 
 function toggleSetCompletion(exerciseId, setIndex) {
@@ -638,13 +640,61 @@ function toggleTimeMode(exerciseId) {
     renderExercises();
 }
 
-function toggleShowPrevious(exerciseId) {
+function focusNextWorkoutInput(exerciseId, setIndex, field, inputElement) {
     const exercise = currentWorkout.exercises.find(ex => ex.id === exerciseId);
     if (!exercise) return;
-    
-    exercise.showPrevious = !exercise.showPrevious;
-    saveCurrentWorkout();
-    renderExercises();
+
+    const isTimeMode = !!exercise.timeMode;
+    let selector = null;
+
+    if (isTimeMode) {
+        selector = `[data-exercise-id="${exerciseId}"][data-set-index="${setIndex + 1}"][data-field="time"]`;
+    } else if (field === 'weight') {
+        selector = `[data-exercise-id="${exerciseId}"][data-set-index="${setIndex}"][data-field="reps"]`;
+    } else if (field === 'reps') {
+        selector = `[data-exercise-id="${exerciseId}"][data-set-index="${setIndex + 1}"][data-field="weight"]`;
+    }
+
+    if (!selector) return;
+
+    const nextInput = document.querySelector(selector);
+    if (nextInput && !nextInput.disabled) {
+        nextInput.focus();
+        nextInput.select?.();
+    }
+}
+
+let isUIHidden = false;
+
+function toggleWorkoutUI() {
+    isUIHidden = !isUIHidden;
+
+    const header = document.querySelector('#workoutScreen .sticky-header');
+    const bottomNav = document.querySelector('#workoutScreen .bottom-nav');
+    const content = document.querySelector('#workoutScreen .workout-content');
+    const actionBar = document.querySelector('#workoutScreen .sticky-workout-actions');
+    const toggleBtn = document.getElementById('toggleUIBtn');
+    const toggleIcon = toggleBtn?.querySelector('i');
+
+    if (!header || !bottomNav || !content || !actionBar || !toggleBtn || !toggleIcon) return;
+
+    if (isUIHidden) {
+        header.classList.add('hidden');
+        bottomNav.classList.add('hidden');
+        actionBar.classList.add('hidden');
+        content.classList.add('fullscreen');
+        toggleBtn.classList.add('fullscreen');
+        toggleIcon.className = 'bi bi-eye';
+    } else {
+        header.classList.remove('hidden');
+        bottomNav.classList.remove('hidden');
+        actionBar.classList.remove('hidden');
+        content.classList.remove('fullscreen');
+        toggleBtn.classList.remove('fullscreen');
+        toggleIcon.className = 'bi bi-eye-slash';
+    }
+
+    localStorage.setItem('workoutUIHidden', isUIHidden ? 'true' : 'false');
 }
 
 function toggleAllExercises() {
@@ -676,14 +726,26 @@ function toggleAllExercises() {
 }
 
 function restoreUIState() {
+    const savedState = localStorage.getItem('workoutUIHidden');
     const header = document.querySelector('#workoutScreen .sticky-header');
     const bottomNav = document.querySelector('#workoutScreen .bottom-nav');
     const content = document.querySelector('#workoutScreen .workout-content');
-    if (!header || !bottomNav || !content) return;
+    const actionBar = document.querySelector('#workoutScreen .sticky-workout-actions');
+    const toggleBtn = document.getElementById('toggleUIBtn');
+    const toggleIcon = toggleBtn?.querySelector('i');
+    if (!header || !bottomNav || !content || !actionBar || !toggleBtn || !toggleIcon) return;
 
     header.classList.remove('hidden');
     bottomNav.classList.remove('hidden');
+    actionBar.classList.remove('hidden');
     content.classList.remove('fullscreen');
+    toggleBtn.classList.remove('fullscreen');
+    toggleIcon.className = 'bi bi-eye-slash';
+    isUIHidden = false;
+
+    if (savedState === 'true') {
+        toggleWorkoutUI();
+    }
 }
 
 function toggleExerciseMenu(exerciseId) {
@@ -760,10 +822,6 @@ function renderExercises() {
                             <button class="exercise-menu-item" onclick="toggleTimeMode(${exercise.id}); event.stopPropagation();">
                                 <i class="bi bi-${exercise.timeMode ? '123' : 'stopwatch'}"></i>
                                 <span>${exercise.timeMode ? 'Switch to reps' : 'Switch to time'}</span>
-                            </button>
-                            <button class="exercise-menu-item" onclick="toggleShowPrevious(${exercise.id}); event.stopPropagation();">
-                                <i class="bi bi-clock-history"></i>
-                                <span>${exercise.showPrevious ? 'Hide previous set' : 'Show previous set'}</span>
                             </button>
                             <button class="exercise-menu-item" onclick="moveExercise(${exercise.id}, 'up'); event.stopPropagation();" ${index === 0 ? 'disabled' : ''}>
                                 <i class="bi bi-chevron-up"></i>
@@ -924,7 +982,6 @@ function renderSet(exerciseId, exercise) {
                 <div class="set-main-content">
                     <div class="set-topline">
                         <div class="set-number-badge">Set ${index + 1}</div>
-                        ${exercise.showPrevious ? `<div class="set-previous">Prev: ${previousText}</div>` : ''}
                     </div>
                     ${isTimeMode ? `
                         <div class="set-input-group time-mode">
@@ -933,7 +990,10 @@ function renderSet(exerciseId, exercise) {
                                    value="${set.actual.time}"
                                    placeholder="0"
                                    ${set.completed ? 'disabled' : ''}
-                                   onchange="handleDirectInput(${exerciseId}, ${index}, 'time', this.value)"
+                                   onchange="handleDirectInput(${exerciseId}, ${index}, 'time', this.value, this)"
+                                   data-exercise-id="${exerciseId}"
+                                   data-set-index="${index}"
+                                   data-field="time"
                                    inputmode="numeric">
                             <span class="set-input-unit">sec</span>
                         </div>
@@ -944,7 +1004,10 @@ function renderSet(exerciseId, exercise) {
                                    value="${set.actual.weight}"
                                    placeholder="0"
                                    ${set.completed ? 'disabled' : ''}
-                                   onchange="handleDirectInput(${exerciseId}, ${index}, 'weight', this.value)"
+                                   onchange="handleDirectInput(${exerciseId}, ${index}, 'weight', this.value, this)"
+                                   data-exercise-id="${exerciseId}"
+                                   data-set-index="${index}"
+                                   data-field="weight"
                                    inputmode="numeric">
                             <span class="set-input-unit">kg</span>
                             <span class="set-input-separator">×</span>
@@ -953,7 +1016,10 @@ function renderSet(exerciseId, exercise) {
                                    value="${set.actual.reps}"
                                    placeholder="0"
                                    ${set.completed ? 'disabled' : ''}
-                                   onchange="handleDirectInput(${exerciseId}, ${index}, 'reps', this.value)"
+                                   onchange="handleDirectInput(${exerciseId}, ${index}, 'reps', this.value, this)"
+                                   data-exercise-id="${exerciseId}"
+                                   data-set-index="${index}"
+                                   data-field="reps"
                                    inputmode="numeric">
                             <span class="set-input-unit">reps</span>
                         </div>

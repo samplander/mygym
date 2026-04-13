@@ -398,7 +398,39 @@ body {
 }
 
 .workout-content.fullscreen {
-    padding-bottom: 12px !important;
+    padding-bottom: 20px !important;
+}
+
+.toggle-ui-btn {
+    display: flex;
+    position: fixed;
+    bottom: 152px;
+    right: 18px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.92);
+    border: none;
+    color: white;
+    font-size: 20px;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+    cursor: pointer;
+    z-index: 980;
+    transition: all 0.3s ease;
+}
+
+.toggle-ui-btn.fullscreen {
+    bottom: 20px;
+}
+
+.toggle-ui-btn:active {
+    transform: scale(0.95);
+}
+
+.toggle-ui-btn:hover {
+    background: rgba(34, 197, 94, 1);
 }
 
 /* History Content */
@@ -999,7 +1031,7 @@ body {
 .set-topline {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 8px;
 }
 
@@ -1008,15 +1040,6 @@ body {
     font-weight: 700;
     font-size: 14px;
     flex-shrink: 0;
-}
-
-.set-previous {
-    font-size: 11px;
-    color: #a1a1aa;
-    font-weight: 500;
-    white-space: nowrap;
-    flex-shrink: 0;
-    text-align: right;
 }
 
 .set-input-group {
@@ -1192,11 +1215,6 @@ body {
     
     .set-number-badge {
         font-size: 13px;
-    }
-    
-    .set-previous {
-        font-size: 10px;
-        text-align: left;
     }
     
     .set-input {
@@ -1475,6 +1493,13 @@ body {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+
+.sticky-workout-actions.hidden {
+    transform: translateY(140%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .workout-action-btn {
