@@ -647,18 +647,33 @@ body {
     font-family: 'Courier New', monospace;
 }
 
+.workout-header-icon-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+}
+
 /* Exercise Card */
 .exercise-card {
     background: #2a2a2a;
-    border-radius: 12px;
+    border-radius: 14px;
     margin-bottom: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
+.exercise-card-complete {
+    border-color: rgba(34, 197, 94, 0.45);
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.14);
+}
+
 .exercise-header {
-    padding: 12px 16px;
+    padding: 12px 14px;
     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     color: white;
     display: flex;
@@ -678,18 +693,54 @@ body {
     align-items: center;
     gap: 10px;
     flex: 1;
+    min-width: 0;
+}
+
+.exercise-title-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.exercise-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.exercise-set-progress {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.92;
+}
+
+.exercise-mode-pill {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: rgba(0,0,0,0.18);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 2px 6px;
+    border-radius: 999px;
 }
 
 .exercise-header-right {
     display: flex;
     align-items: center;
     gap: 8px;
+    position: relative;
+    flex-shrink: 0;
 }
 
 .exercise-header h6 {
     margin: 0;
-    font-size: 17px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .chevron {
@@ -723,14 +774,19 @@ body {
     background: rgba(255,255,255,0.3);
 }
 
+.exercise-menu-wrap {
+    position: relative;
+}
+
+.exercise-menu-btn,
 .delete-exercise-btn {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.18);
     border: none;
     color: white;
-    width: var(--touch-target);
-    height: var(--touch-target);
-    border-radius: 8px;
-    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -739,8 +795,55 @@ body {
     z-index: 10;
 }
 
+.exercise-menu-btn:active,
 .delete-exercise-btn:active {
     background: rgba(255,255,255,0.3);
+}
+
+.exercise-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 190px;
+    background: rgba(20, 20, 20, 0.98);
+    border: 1px solid rgba(34, 197, 94, 0.22);
+    border-radius: 14px;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.35);
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 50;
+}
+
+.exercise-menu.show {
+    display: flex;
+}
+
+.exercise-menu-item {
+    background: transparent;
+    border: none;
+    color: #e4e4e7;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    text-align: left;
+}
+
+.exercise-menu-item:disabled {
+    opacity: 0.4;
+}
+
+.exercise-menu-item:not(:disabled):hover {
+    background: rgba(34, 197, 94, 0.08);
+}
+
+.exercise-menu-item.danger {
+    color: #fbbf24;
 }
 
 .exercise-body {
@@ -910,11 +1013,11 @@ body {
 .set-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(42, 42, 42, 0.6);
-    padding: 6px 8px;
-    border-radius: 6px;
-    margin-bottom: 4px;
+    gap: 10px;
+    background: rgba(42, 42, 42, 0.78);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 8px;
     font-size: 13px;
     border: 1px solid rgba(34, 197, 94, 0.15);
 }
@@ -923,11 +1026,25 @@ body {
     display: none;
 }
 
+.set-main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.set-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
 .set-number-badge {
-    color: #22c55e;
+    color: #ffffff;
     font-weight: 700;
-    font-size: 13px;
-    min-width: 24px;
+    font-size: 14px;
     flex-shrink: 0;
 }
 
@@ -937,14 +1054,18 @@ body {
     font-weight: 500;
     white-space: nowrap;
     flex-shrink: 0;
-    min-width: 60px;
+    text-align: right;
 }
 
 .set-input-group {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     flex: 1;
+}
+
+.set-input-group.time-mode {
+    max-width: 160px;
 }
 
 .set-input-label {
@@ -955,20 +1076,20 @@ body {
 }
 
 .set-input {
-    width: 50px;
-    height: 28px;
+    width: 62px;
+    height: 36px;
     text-align: center;
     border: 2px solid rgba(34, 197, 94, 0.3);
-    border-radius: 4px;
-    padding: 2px;
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: 8px;
+    padding: 4px;
+    font-size: 15px;
+    font-weight: 700;
     background: #1a1a1a;
     color: white;
 }
 
 .set-input-reps {
-    width: 40px;
+    width: 54px;
 }
 
 .set-input:focus {
@@ -995,10 +1116,10 @@ body {
     background: transparent;
     border: 2px solid rgba(173, 181, 189, 0.4);
     color: #a1a1aa;
-    width: 28px;
-    height: 28px;
-    border-radius: 4px;
-    font-size: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 20px;
     cursor: pointer;
     flex-shrink: 0;
     display: flex;
@@ -1125,29 +1246,33 @@ body {
 @media (max-width: 400px) {
     .set-row {
         font-size: 12px;
-        gap: 4px;
-        padding: 4px 6px;
+        gap: 8px;
+        padding: 8px;
+    }
+    
+    .set-topline {
+        flex-direction: column;
+        align-items: flex-start;
     }
     
     .set-number-badge {
-        min-width: 20px;
-        font-size: 12px;
+        font-size: 13px;
     }
     
     .set-previous {
         font-size: 10px;
-        min-width: 50px;
+        text-align: left;
     }
     
     .set-input {
-        width: 46px;
-        height: 26px;
-        font-size: 13px;
-        padding: 1px;
+        width: 54px;
+        height: 34px;
+        font-size: 14px;
+        padding: 2px;
     }
     
     .set-input-reps {
-        width: 36px;
+        width: 46px;
     }
     
     .set-input-unit {
@@ -1155,8 +1280,8 @@ body {
     }
     
     .set-delete-btn {
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         font-size: 12px;
     }
 }
