@@ -1030,9 +1030,6 @@ function renderSet(exerciseId, exercise) {
                 </button>
 
                 <div class="set-main-content">
-                    <div class="set-topline">
-                        <div class="set-number-badge">Set ${index + 1}</div>
-                    </div>
                     ${isTimeMode ? `
                         <div class="set-input-group time-mode">
                             <input type="number" 
