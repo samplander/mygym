@@ -47,3 +47,8 @@ Track durable decisions here so we do not keep re-deciding the same things.
 ## 2026-04-05 — Obsidian is deprecated for active MyGym developer workflow
 - Decision: Obsidian should no longer be used as an active execution surface for MyGym development work
 - Why: it adds noise and fragmentation relative to the simpler capture -> plan -> execute -> record workflow
+
+## 2026-04-22 — Add a dedicated UI refresh phase for core surfaces
+- Decision: sidebar, list, and form visual upgrades will be treated as a defined project phase with its own plan and branch `phase/ui-refresh-sidebar-list-form`
+- Why: the current look and feel is starting to feel dated, and a constrained refresh now should improve trust and product quality without triggering a full redesign
+

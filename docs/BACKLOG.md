@@ -38,6 +38,11 @@ Use one or more:
 
 ## NEXT
 
+### Execute UI refresh phase for sidebar, list, and form views
+- Tags: `ux` `product` `code`
+- Status: planned
+- Notes: dedicated phase tracked in `docs/IMPLEMENTATION_PLANS/UI_REFRESH_PLAN.md`; implementation plan is now grounded in the current `index.html`, `styles.css`, and `app.js` shell/list/form structure; execute on branch `phase/ui-refresh-sidebar-list-form`; recommended slice order is shared tokens + shell, then settings/history/data-browser rows, then modal/forms, then workout-specific refinements
+
 ### Define follow-up cleanup for exercise identity + propagation model
 - Tags: `code` `product` `ux`
 - Status: largely complete
