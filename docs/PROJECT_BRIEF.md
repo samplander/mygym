@@ -45,7 +45,13 @@ This project currently has two main tracks:
 - review current implementation quality
 - identify technical debt and risk areas
 - improve architecture, polish, reliability, and readiness
-- implement prioritized features and fixes on `dev`
+- implement prioritized features and fixes on active work branches
+
+### Current active phase
+- Defined UI refresh phase for sidebar, list, and form views
+- Plan: `docs/IMPLEMENTATION_PLANS/UI_REFRESH_PLAN.md`
+- Branch: `phase/ui-refresh-sidebar-list-form`
+- Intent: deliver a constrained visual system upgrade that modernizes the core product surfaces without triggering a full redesign
 
 ## Known concerns
 - China uses the app daily and is concerned it may make more sense to him than to new users.
