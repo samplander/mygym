@@ -297,46 +297,117 @@ async function generateCoachWorkout(customPreferences = null) {
 }
 
 async function requestCoachWorkout(payload) {
+    let response;
     try {
-        const response = await fetch(`${COACH_API_URL}/api/coach`, {
+        response = await fetch(`${COACH_API_URL}/api/coach`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
                 'X-API-Key': COACH_API_KEY,
                 'X-Client-Id': CLIENT_ID
             },
             body: JSON.stringify(payload)
         });
-        
-        if (!response.ok) {
-            // Try to extract error message from response
-            let errorMessage = `Server error: ${response.status}`;
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.error || errorMessage;
-            } catch (e) {
-                // Response wasn't JSON, use default message
-            }
-            throw new Error(errorMessage);
-        }
-        
-        const data = await response.json();
-        
-        // Validate response structure
-        if (!data.currentWorkout || !data.rationale || !data.focus) {
-            throw new Error('Invalid response from Coach API');
-        }
-        
-        // Process the response
-        handleCoachResponse(data);
-        
     } catch (error) {
-        // Network errors or fetch failures
-        if (error.message.includes('Failed to fetch')) {
-            throw new Error('Cannot connect to Coach API. Is the server running on port 3001?');
-        }
-        throw error;
+        throw new Error('Cannot connect to Coach API. Is the server running?');
     }
+
+    if (!response.ok) {
+        // Pre-flight error (still a normal JSON body with a non-200 status)
+        let errorMessage = `Server error: ${response.status}`;
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+        } catch (e) { /* response wasn't JSON */ }
+        throw new Error(errorMessage);
+    }
+
+    // Success: the coach streams Server-Sent Events — live `rationale` deltas,
+    // then a final `result`, or an `error`. Pipe the rationale into the modal.
+    beginCoachRationaleStream();
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let resultData = null;
+    let streamError = null;
+
+    try {
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            const frames = buffer.split('\n\n');
+            buffer = frames.pop(); // last element may be an incomplete frame
+            for (const frame of frames) {
+                const parsed = parseSSEFrame(frame);
+                if (!parsed) continue;
+                if (parsed.event === 'rationale') {
+                    appendCoachRationaleStream(parsed.data.text || '');
+                } else if (parsed.event === 'result') {
+                    resultData = parsed.data;
+                } else if (parsed.event === 'error') {
+                    streamError = parsed.data.error || 'Coach failed to generate a workout';
+                }
+            }
+        }
+    } catch (e) {
+        closeCoachRationaleStream();
+        throw new Error('Connection lost while generating workout. Please try again.');
+    }
+
+    if (streamError) {
+        closeCoachRationaleStream();
+        throw new Error(streamError);
+    }
+    if (!resultData || !resultData.currentWorkout || !resultData.rationale || !resultData.focus) {
+        closeCoachRationaleStream();
+        throw new Error('Invalid response from Coach API');
+    }
+
+    // handleCoachResponse re-renders the same modal with the finalized rationale
+    handleCoachResponse(resultData);
+}
+
+// Parse one SSE frame ("event: x\ndata: {...}"). Returns {event, data} or null.
+function parseSSEFrame(frame) {
+    let event = 'message';
+    const dataLines = [];
+    for (const line of frame.split('\n')) {
+        if (line.startsWith(':')) continue;              // comment / heartbeat
+        if (line.startsWith('event:')) event = line.slice(6).trim();
+        else if (line.startsWith('data:')) dataLines.push(line.slice(5).trim());
+    }
+    if (dataLines.length === 0) return null;
+    let data;
+    try { data = JSON.parse(dataLines.join('\n')); } catch (e) { return null; }
+    return { event, data };
+}
+
+// Streaming rationale UI — reuses the coach rationale modal while generating.
+function beginCoachRationaleStream() {
+    document.getElementById('rationaleFocus').textContent = 'Analyzing…';
+    document.getElementById('rationaleDuration').textContent = '';
+    const container = document.getElementById('rationaleText');
+    container.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'mb-2';
+    p.id = 'rationaleStreamText';
+    container.appendChild(p);
+    const startBtn = document.getElementById('startCoachWorkoutBtn');
+    if (startBtn) startBtn.disabled = true;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('coachRationaleModal')).show();
+}
+
+function appendCoachRationaleStream(text) {
+    const p = document.getElementById('rationaleStreamText');
+    if (p) p.textContent += text;
+}
+
+function closeCoachRationaleStream() {
+    const inst = bootstrap.Modal.getInstance(document.getElementById('coachRationaleModal'));
+    if (inst) inst.hide();
 }
 
 function handleCoachResponse(data) {
@@ -386,7 +457,10 @@ function showCoachRationaleModal(rationale, focus, estimatedMinutes) {
         container.appendChild(p);
     });
 
-    const modal = new bootstrap.Modal(document.getElementById('coachRationaleModal'));
+    const startBtn = document.getElementById('startCoachWorkoutBtn');
+    if (startBtn) startBtn.disabled = false;
+
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('coachRationaleModal'));
     modal.show();
 }
 
