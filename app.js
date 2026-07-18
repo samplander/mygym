@@ -102,6 +102,12 @@ function initializeApp() {
     // Initialize category dropdowns
     populateCategoryDropdowns();
     
+    // Ensure the all-time workout counter exists before any completion can run
+    // (one-time migration: seeds existing users from their retained history length).
+    if (MyGymStorage.loadWorkoutStats(null) === null) {
+        MyGymStorage.saveWorkoutStats({ totalCompleted: loadWorkoutHistory().length });
+    }
+
     // Render quick stats
     renderQuickStats();
     
@@ -542,7 +548,8 @@ function completeWorkout() {
         
         // Save to history
         saveToHistory();
-        
+        incrementTotalWorkoutsCompleted();
+
         // Clear current workout
         currentWorkout = null;
         clearCurrentWorkout();
@@ -1289,6 +1296,32 @@ function clearWorkoutHistory() {
     return MyGymStorage.clearWorkoutHistory();
 }
 
+// All-time completed workout counter (survives the 100-record workoutHistory cap)
+function getTotalWorkoutsCompleted() {
+    const stats = MyGymStorage.loadWorkoutStats(null);
+    if (stats && typeof stats.totalCompleted === 'number' && stats.totalCompleted >= 0) {
+        return stats.totalCompleted;
+    }
+    // First run / migration: seed from however many workouts we currently retain.
+    const seed = loadWorkoutHistory().length;
+    MyGymStorage.saveWorkoutStats({ totalCompleted: seed });
+    return seed;
+}
+
+function setTotalWorkoutsCompleted(count) {
+    const safe = Math.max(0, Math.floor(Number(count) || 0));
+    MyGymStorage.saveWorkoutStats({ totalCompleted: safe });
+    return safe;
+}
+
+function incrementTotalWorkoutsCompleted() {
+    return setTotalWorkoutsCompleted(getTotalWorkoutsCompleted() + 1);
+}
+
+function decrementTotalWorkoutsCompleted() {
+    return setTotalWorkoutsCompleted(getTotalWorkoutsCompleted() - 1);
+}
+
 // History Management
 function renderHistory() { return MyGymHistoryReporting.renderHistory(); }
 
@@ -1951,7 +1984,8 @@ function exportAllData() {
         currentWorkout: MyGymStorage.loadCurrentWorkout(),
         workoutHistory: loadWorkoutHistory(),
         exerciseLibrary: loadExerciseLibrary(),
-        categoryConfig: loadCategoryConfig()
+        categoryConfig: loadCategoryConfig(),
+        workoutStats: MyGymStorage.loadWorkoutStats(null)
     };
     
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -2044,6 +2078,10 @@ function importData(event) {
                     return { ...w, id };
                 });
                 saveWorkoutHistory(sanitised);
+                const importedTotal = (data.workoutStats && typeof data.workoutStats.totalCompleted === 'number')
+                    ? data.workoutStats.totalCompleted
+                    : sanitised.length;
+                setTotalWorkoutsCompleted(Math.max(importedTotal, sanitised.length));
             }
             if (data.exerciseLibrary) {
                 saveExerciseLibrary(data.exerciseLibrary);

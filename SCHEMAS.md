@@ -10,6 +10,7 @@ The app uses the following localStorage keys:
 
 - `currentWorkout` - Active workout session (JSON)
 - `workoutHistory` - Array of completed workouts (JSON array, max 100 items)
+- `workoutStats` - All-time completed-workout counter (JSON object)
 - `exerciseLibrary` - User's exercise database (JSON array)
 - `categoryConfig` - User's category configuration (JSON array)
 
@@ -151,6 +152,19 @@ interface Category {
     { id: 6, name: 'Other', color: '#6b7280', protected: true },
     { id: 7, name: 'Uncategorized', color: '#374151', protected: true }
 ]
+```
+
+### 7. Workout Stats
+
+**Key:** `workoutStats`  
+**Type:** Object
+
+All-time completed-workout counter. Survives the 100-entry `workoutHistory` cap and powers the home "Workouts" tile.
+
+```typescript
+interface WorkoutStats {
+    totalCompleted: number;        // All-time count of completed workouts
+}
 ```
 
 ---

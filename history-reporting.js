@@ -31,7 +31,9 @@
             return;
         }
 
-        const totalWorkouts = history.length;
+        const totalWorkouts = (typeof getTotalWorkoutsCompleted === 'function')
+            ? getTotalWorkoutsCompleted()
+            : history.length;
         const lastWorkout = history[0];
         const daysSinceLastWorkout = Math.floor((Date.now() - new Date(lastWorkout.completedAt).getTime()) / (1000 * 60 * 60 * 24));
         const totalSets = history.reduce((sum, workout) => sum + (workout.totalSets || 0), 0);
@@ -913,12 +915,14 @@
         let history = loadWorkoutHistory();
         history = history.filter(w => w.id !== workoutId);
         saveWorkoutHistory(history);
+        if (typeof decrementTotalWorkoutsCompleted === 'function') decrementTotalWorkoutsCompleted();
         renderHistory();
     }
 
     function clearAllHistory() {
         if (!confirm('Delete ALL workout history? This cannot be undone!')) return;
         clearWorkoutHistory();
+        if (typeof setTotalWorkoutsCompleted === 'function') setTotalWorkoutsCompleted(0);
         historyViewState.visibleCount = 5;
         renderHistory();
     }

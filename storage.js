@@ -147,6 +147,15 @@
         clearWorkoutHistory() {
             return clearKey('workoutHistory');
         },
+        loadWorkoutStats(fallback = null) {
+            return loadJson('workoutStats', { fallback, kind: 'object-or-null' });
+        },
+        saveWorkoutStats(value, fallback = null) {
+            return saveJson('workoutStats', value, { fallback, kind: 'object-or-null' });
+        },
+        clearWorkoutStats() {
+            return clearKey('workoutStats');
+        },
         loadExerciseLibrary(fallback = []) {
             return loadJson('exerciseLibrary', { fallback, kind: 'array' });
         },
