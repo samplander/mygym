@@ -212,6 +212,7 @@ body {
     padding: 18px;
     box-shadow: var(--shadow-2);
     text-align: left;
+    animation: fadeInUp var(--dur-base) var(--ease-out) both;
 }
 
 .home-status-eyebrow {
@@ -260,6 +261,7 @@ body {
     text-align: center;
     border: 1px solid var(--border-subtle);
     box-shadow: var(--shadow-1);
+    animation: fadeInUp var(--dur-base) var(--ease-out) both;
 }
 
 .stat-value {
@@ -316,7 +318,7 @@ body {
     aspect-ratio: 1;
     border-radius: var(--r-xs);
     background: rgba(34, 197, 94, 0.08);
-    transition: all 0.2s ease;
+    transition: all var(--dur-base) var(--ease-standard);
     cursor: pointer;
     min-width: 0;
     min-height: 0;
@@ -423,7 +425,7 @@ body {
     gap: 6px;
     font-size: 13px;
     font-weight: 600;
-    transition: all 0.2s ease;
+    transition: all var(--dur-base) var(--ease-standard);
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
@@ -459,7 +461,7 @@ body {
     justify-content: center;
     gap: 10px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--dur-slow) var(--ease-standard);
     backdrop-filter: blur(10px);
     box-shadow: var(--shadow-2);
     position: relative;
@@ -540,8 +542,8 @@ body {
     border-radius: var(--r-xl);
     border: 1px solid rgba(34, 197, 94, 0.2);
     box-shadow: var(--shadow-2);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease;
+    transition: transform var(--dur-slow) var(--ease-standard),
+                opacity var(--dur-slow) var(--ease-standard);
     color: white;
 }
 
@@ -567,7 +569,7 @@ body {
     justify-content: center;
     cursor: pointer;
     border-radius: var(--r-md);
-    transition: all 0.3s ease;
+    transition: all var(--dur-slow) var(--ease-standard);
     box-shadow: var(--shadow-1);
 }
 
@@ -579,7 +581,7 @@ body {
 /* Workout Content */
 .workout-content {
     padding: 12px 12px 156px 12px;
-    transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: padding var(--dur-slow) var(--ease-standard);
 }
 
 .workout-content.fullscreen {
@@ -603,7 +605,7 @@ body {
     box-shadow: var(--shadow-3);
     cursor: pointer;
     z-index: 1100;
-    transition: transform 0.25s ease, opacity 0.25s ease, background 0.25s ease, bottom 0.25s ease;
+    transition: transform var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard), bottom var(--dur-base) var(--ease-standard);
     appearance: none;
     -webkit-appearance: none;
 }
@@ -967,7 +969,7 @@ body {
 
 .chevron {
     font-size: 18px;
-    transition: transform 0.3s ease;
+    transition: transform var(--dur-slow) var(--ease-standard);
     display: inline-block;
 }
 
@@ -989,7 +991,7 @@ body {
     cursor: pointer;
     pointer-events: all;
     z-index: 10;
-    transition: background 0.2s;
+    transition: background var(--dur-base) var(--ease-standard);
 }
 
 .toggle-details-btn:active {
@@ -1072,7 +1074,7 @@ body {
     padding: var(--sp-2);
     max-height: 5000px;
     overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s ease;
+    transition: max-height var(--dur-slow) var(--ease-standard), padding var(--dur-slow) var(--ease-standard);
 }
 
 .exercise-body.collapsed {
@@ -1111,7 +1113,7 @@ body {
     padding: 10px 8px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all var(--dur-base) var(--ease-standard);
     scroll-snap-align: start;
 }
 
@@ -1172,7 +1174,7 @@ body {
     margin-bottom: 8px;
     max-height: 5000px;
     overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+    transition: max-height var(--dur-slow) var(--ease-standard), padding var(--dur-slow) var(--ease-standard), margin var(--dur-slow) var(--ease-standard), opacity var(--dur-slow) var(--ease-standard);
     opacity: 1;
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
@@ -1333,7 +1335,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all var(--dur-base) var(--ease-standard);
     padding: 0;
 }
 
@@ -1341,6 +1343,7 @@ body {
     background: var(--accent);
     border-color: var(--accent);
     color: white;
+    animation: popCheck var(--dur-base) var(--ease-out) 1;
 }
 
 .set-complete-btn:hover {
@@ -1380,7 +1383,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all var(--dur-base) var(--ease-standard);
 }
 
 .set-delete-btn:hover {
@@ -1404,7 +1407,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all var(--dur-base) var(--ease-standard);
     font-size: 14px;
     padding: 0;
 }
@@ -1474,7 +1477,7 @@ body {
     gap: 10px;
     max-height: 1000px;
     overflow: hidden;
-    transition: max-height 0.3s ease, margin 0.3s ease;
+    transition: max-height var(--dur-slow) var(--ease-standard), margin var(--dur-slow) var(--ease-standard);
 }
 
 .set-values.collapsed {
@@ -1642,7 +1645,7 @@ body {
     font-weight: 600;
     cursor: pointer;
     margin-top: 8px;
-    transition: all 0.2s ease;
+    transition: all var(--dur-base) var(--ease-standard);
 }
 
 .add-set-btn:hover {
@@ -1665,7 +1668,7 @@ body {
     font-weight: 600;
     cursor: pointer;
     margin-top: 8px;
-    transition: all 0.2s ease;
+    transition: all var(--dur-base) var(--ease-standard);
 }
 
 .swap-exercise-btn:hover {
@@ -1684,7 +1687,7 @@ body {
     border-radius: var(--r-sm);               /* was 16px, now matches */
     box-shadow: var(--shadow-1);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--dur-base) var(--ease-standard);
     min-height: var(--touch-target);
 }
 
@@ -1722,7 +1725,7 @@ body {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: var(--shadow-3);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    transition: transform var(--dur-slow) var(--ease-standard), opacity var(--dur-slow) var(--ease-standard);
 }
 
 .sticky-workout-actions.hidden {
@@ -1753,8 +1756,8 @@ body {
     padding-bottom: 6px;
     box-shadow: var(--shadow-3);
     z-index: 1000;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                opacity 0.3s ease;
+    transition: transform var(--dur-slow) var(--ease-standard),
+                opacity var(--dur-slow) var(--ease-standard);
 }
 
 .bottom-nav.hidden {
@@ -1776,7 +1779,7 @@ body {
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--dur-slow) var(--ease-standard);
     position: relative;
 }
 
@@ -1787,14 +1790,14 @@ body {
     align-items: center;
     justify-content: center;
     border-radius: var(--r-md);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--dur-slow) var(--ease-standard);
     position: relative;
     margin-bottom: 4px;
 }
 
 .nav-item i {
     font-size: 22px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--dur-slow) var(--ease-standard);
 }
 
 /* Active State */
@@ -1855,6 +1858,18 @@ body {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
     }
+}
+
+/* ===== Motion: entrance & micro-interactions ===== */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes popCheck {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.18); }
+    100% { transform: scale(1); }
 }
 
 /* Modal Optimizations */
@@ -2266,7 +2281,7 @@ input[type="number"] {
     box-shadow: var(--shadow-1);
     overflow: hidden;
     border-left: 4px solid var(--border-accent);
-    transition: all 0.3s ease;
+    transition: all var(--dur-slow) var(--ease-standard);
 }
 
 .detail-exercise-card-new.all-completed {
@@ -2281,7 +2296,7 @@ input[type="number"] {
     cursor: pointer;
     user-select: none;
     background: var(--surface-2);
-    transition: background 0.2s;
+    transition: background var(--dur-base) var(--ease-standard);
     border-bottom: 1px solid rgba(34, 197, 94, 0.2);
 }
 
@@ -2338,7 +2353,7 @@ input[type="number"] {
 .exercise-chevron {
     color: var(--text-muted);
     font-size: 16px;
-    transition: transform 0.3s ease;
+    transition: transform var(--dur-slow) var(--ease-standard);
 }
 
 /* Exercise Body */
@@ -2518,6 +2533,7 @@ input[type="number"] {
     margin-bottom: 20px;
     box-shadow: var(--shadow-1);
     border: 1px solid var(--border-subtle);
+    animation: fadeInUp var(--dur-base) var(--ease-out) both;
 }
 
 .settings-section-header {
@@ -2579,7 +2595,7 @@ input[type="number"] {
     border-radius: var(--r-sm);
     border: 1px solid var(--border-subtle);
     box-shadow: var(--shadow-1);
-    transition: all 0.2s ease;
+    transition: all var(--dur-base) var(--ease-standard);
 }
 
 .exercise-library-card:hover {
@@ -2631,7 +2647,7 @@ input[type="number"] {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--dur-base) var(--ease-standard);
     color: white;
 }
 
@@ -2674,7 +2690,7 @@ input[type="number"] {
     padding: var(--sp-3) var(--sp-4);
     cursor: pointer;
     border-bottom: 1px solid rgba(34, 197, 94, 0.1);
-    transition: background 0.15s ease;
+    transition: background var(--dur-fast) var(--ease-standard);
     color: white;
 }
 
@@ -2820,7 +2836,7 @@ input[type="number"] {
     padding: var(--sp-4);
     border-bottom: 1px solid rgba(255,255,255,0.1);
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background var(--dur-base) var(--ease-standard);
     min-height: var(--touch-target);
 }
 
@@ -3147,7 +3163,7 @@ input[type="number"] {
     border-radius: var(--r-sm);
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all var(--dur-base) var(--ease-standard);
 }
 
 .date-range-btn:hover {
@@ -3375,7 +3391,7 @@ input[type="number"] {
     border-radius: var(--r-sm);
     border: 2px solid transparent;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--dur-base) var(--ease-standard);
     min-height: 36px;
 }
 
@@ -3404,4 +3420,14 @@ textarea:focus-visible,
 .form-select:focus-visible {
     outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
+}
+
+/* ===== Respect reduced motion (must remain the last rule) ===== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
 }
