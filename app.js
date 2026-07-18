@@ -260,6 +260,7 @@ async function generateCoachWorkout(customPreferences = null) {
         const preferences = customPreferences || {
             mode: 'progressive_overload',
             splitType: 'auto',
+            model: 'sonnet',
             timeAvailable: 60,
             injuries: '',
             notes: ''
@@ -396,6 +397,7 @@ function showCoachPreferencesModal() {
     // Populate fields
     document.getElementById('coachModeSelect').value = savedPrefs.mode || 'progressive_overload';
     document.getElementById('coachSplitTypeSelect').value = savedPrefs.splitType || 'auto';
+    document.getElementById('coachModelSelect').value = savedPrefs.model || 'sonnet';
     document.getElementById('timeAvailableInput').value = savedPrefs.timeAvailable || 60;
     document.getElementById('injuriesInput').value = savedPrefs.injuries || '';
     document.getElementById('notesInput').value = savedPrefs.notes || '';
@@ -416,6 +418,7 @@ function generateFromPreferences() {
     const preferences = {
         mode: document.getElementById('coachModeSelect').value,
         splitType: document.getElementById('coachSplitTypeSelect').value || 'auto',
+        model: document.getElementById('coachModelSelect').value || 'sonnet',
         timeAvailable: parseInt(document.getElementById('timeAvailableInput').value) || 60,
         injuries: document.getElementById('injuriesInput').value.trim(),
         notes: document.getElementById('notesInput').value.trim()

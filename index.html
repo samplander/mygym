@@ -456,6 +456,14 @@
                         <small style="color:#a1a1aa;">Optional. Leave on Auto to keep current coach behavior.</small>
                     </div>
                     <div class="mb-3">
+                        <label for="coachModelSelect" class="form-label">AI Model</label>
+                        <select id="coachModelSelect" class="form-select">
+                            <option value="sonnet" selected>Sonnet — Faster</option>
+                            <option value="opus">Opus — Higher quality (slower)</option>
+                        </select>
+                        <small style="color:#a1a1aa;">Opus reasons more deeply but is slower and may time out; switch to Sonnet if generation fails.</small>
+                    </div>
+                    <div class="mb-3">
                         <label for="timeAvailableInput" class="form-label">Time Available</label>
                         <div class="input-group">
                             <input type="number" id="timeAvailableInput" class="form-control" value="60" min="15" max="180">
