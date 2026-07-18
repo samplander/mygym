@@ -813,6 +813,34 @@ body {
     border-radius: 999px;
 }
 
+/* Superset grouping: colored left accent + A1/A2 badge, tightened spacing to read as a bracket */
+.exercise-card--superset {
+    border-left: 3px solid var(--ss-color, #f59e0b);
+}
+
+.exercise-card--superset:not(.exercise-card--superset-last) {
+    margin-bottom: 4px;
+}
+
+.superset-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: var(--ss-color, #f59e0b);
+    padding: 2px 6px 2px 4px;
+    border-radius: 999px;
+}
+
+.superset-badge i {
+    font-size: 12px;
+    line-height: 1;
+}
+
 .exercise-header-right {
     display: flex;
     align-items: center;

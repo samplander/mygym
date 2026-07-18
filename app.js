@@ -853,6 +853,34 @@ function updateWorkoutPrimaryActions() {
 }
 
 // Rendering
+const SUPERSET_COLORS = ['#f59e0b', '#3b82f6', '#a855f7', '#ec4899', '#14b8a6'];
+
+// Map exercise index -> { color, badge, first, last } for exercises in a superset group of 2+.
+function computeSupersetMeta(exercises) {
+    const groups = {};
+    exercises.forEach((ex, i) => {
+        const g = ex.supersetGroup;
+        if (!g) return;
+        (groups[g] = groups[g] || []).push(i);
+    });
+    const meta = {};
+    let colorIdx = 0;
+    Object.keys(groups).sort().forEach(letter => {
+        const indices = groups[letter];
+        if (indices.length < 2) return;   // a lone tag is not a superset
+        const color = SUPERSET_COLORS[colorIdx++ % SUPERSET_COLORS.length];
+        indices.forEach((exIndex, pos) => {
+            meta[exIndex] = {
+                color,
+                badge: `${letter}${pos + 1}`,
+                first: pos === 0,
+                last: pos === indices.length - 1,
+            };
+        });
+    });
+    return meta;
+}
+
 function renderExercises() {
     const container = document.getElementById('exercisesList');
     updateAnalysisButton();
@@ -867,12 +895,18 @@ function renderExercises() {
         return;
     }
     
+    const supersetMeta = computeSupersetMeta(currentWorkout.exercises);
+
     container.innerHTML = currentWorkout.exercises.map((exercise, index) => {
         const completedSets = exercise.sets.filter(set => set.completed).length;
         const totalSets = exercise.sets.length;
         const isMenuOpen = currentExerciseMenuId === exercise.id;
+        const ss = supersetMeta[index];
+        const ssClasses = ss
+            ? ` exercise-card--superset${ss.first ? ' exercise-card--superset-first' : ''}${ss.last ? ' exercise-card--superset-last' : ''}`
+            : '';
         return `
-        <div class="exercise-card ${completedSets === totalSets && totalSets > 0 ? 'exercise-card-complete' : ''}">
+        <div class="exercise-card ${completedSets === totalSets && totalSets > 0 ? 'exercise-card-complete' : ''}${ssClasses}"${ss ? ` style="--ss-color:${ss.color}"` : ''}>
             <div class="exercise-header" onclick="event.target.closest('.exercise-menu') || event.target.closest('.exercise-history-btn') ? null : toggleExercise(${exercise.id})">
                 <div class="exercise-header-left">
                     <i class="bi bi-chevron-down chevron ${exercise.collapsed ? 'collapsed' : ''}"></i>
@@ -881,6 +915,7 @@ function renderExercises() {
                         <div class="exercise-meta-row">
                             <span class="exercise-set-progress">${completedSets}/${totalSets} sets</span>
                             ${exercise.timeMode ? '<span class="exercise-mode-pill">Time</span>' : '<span class="exercise-mode-pill">Reps</span>'}
+                            ${ss ? `<span class="superset-badge"><i class="bi bi-link-45deg"></i>${ss.badge}</span>` : ''}
                         </div>
                     </div>
                 </div>
