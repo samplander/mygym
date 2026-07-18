@@ -389,6 +389,12 @@ function showCoachPreferencesModal() {
 }
 
 function generateFromPreferences() {
+    // The mode saved from the previous run is the "previous" objective. The
+    // server uses it to detect a goal change and restructure the program
+    // instead of continuing the historical trajectory.
+    const savedPrefs = JSON.parse(localStorage.getItem('coachPreferences') || '{}');
+    const previousMode = savedPrefs.mode || null;
+
     // Collect form values
     const preferences = {
         mode: document.getElementById('coachModeSelect').value,
@@ -397,16 +403,17 @@ function generateFromPreferences() {
         injuries: document.getElementById('injuriesInput').value.trim(),
         notes: document.getElementById('notesInput').value.trim()
     };
-    
-    // Save preferences for next time
+
+    // Save preferences for next time (this mode becomes the "previous" next run)
     localStorage.setItem('coachPreferences', JSON.stringify(preferences));
-    
+
     // Hide modal
     const modal = bootstrap.Modal.getInstance(document.getElementById('coachPreferencesModal'));
     modal.hide();
-    
-    // Generate workout with custom preferences
-    generateCoachWorkout(preferences);
+
+    // Generate workout with custom preferences. previousMode is sent for the
+    // coach's goal-change logic but is not persisted into saved preferences.
+    generateCoachWorkout({ ...preferences, previousMode });
 }
 
 function startCoachGeneratedWorkout() {
