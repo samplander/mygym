@@ -196,6 +196,7 @@ function showWorkoutScreen() {
     renderExercises();
     startTimer();
     restoreUIState();
+    updateAnalysisButton();
 }
 
 function showHistoryScreen() {
@@ -342,6 +343,8 @@ function handleCoachResponse(data) {
     
     // Write new workout to localStorage
     currentWorkout = newWorkout;
+    // Persist coach metadata onto the workout so the analysis can be reopened later
+    currentWorkout.coachAnalysis = { rationale, focus, estimatedMinutes };
     saveCurrentWorkout();
     
     // Update exercise library if coach added new exercises
@@ -351,6 +354,20 @@ function handleCoachResponse(data) {
     
     // Show rationale modal before entering workout
     showCoachRationaleModal(rationale, focus, estimatedMinutes);
+    updateAnalysisButton();
+}
+
+function showWorkoutAnalysis() {
+    const a = currentWorkout && currentWorkout.coachAnalysis;
+    if (!a) return;
+    showCoachRationaleModal(a.rationale, a.focus, a.estimatedMinutes);
+}
+
+function updateAnalysisButton() {
+    const btn = document.getElementById('analysisBtn');
+    if (!btn) return;
+    const hasAnalysis = !!(currentWorkout && currentWorkout.coachAnalysis);
+    btn.classList.toggle('d-none', !hasAnalysis);
 }
 
 function showCoachRationaleModal(rationale, focus, estimatedMinutes) {
@@ -838,7 +855,8 @@ function updateWorkoutPrimaryActions() {
 // Rendering
 function renderExercises() {
     const container = document.getElementById('exercisesList');
-    
+    updateAnalysisButton();
+
     if (!currentWorkout || currentWorkout.exercises.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
