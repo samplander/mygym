@@ -172,7 +172,7 @@ body {
     width: 80px;
     height: 80px;
     background: rgba(34, 197, 94, 0.15);
-    border-radius: 20px;
+    border-radius: var(--r-xl);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -208,7 +208,7 @@ body {
     max-width: 320px;
     background: linear-gradient(180deg, rgba(20, 20, 20, 0.96) 0%, rgba(16, 16, 16, 0.88) 100%);
     border: 1px solid rgba(34, 197, 94, 0.24);
-    border-radius: 18px;
+    border-radius: var(--r-xl);
     padding: 18px;
     box-shadow: var(--shadow-2);
     text-align: left;
@@ -236,7 +236,7 @@ body {
     color: #c4c4cc;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
     flex-wrap: wrap;
     line-height: 1.45;
 }
@@ -253,7 +253,7 @@ body {
 
 .stat-card {
     background: rgba(20, 20, 20, 0.92);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     padding: 12px 14px;
     flex: 1;
     min-width: 96px;
@@ -285,8 +285,8 @@ body {
     width: 100%;
     max-width: 320px;
     background: var(--surface-1);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: var(--r-md);
+    padding: var(--sp-4);
     border: 1px solid var(--border-default);
     box-shadow: var(--shadow-1);
 }
@@ -314,7 +314,7 @@ body {
 
 .heatmap-cell {
     aspect-ratio: 1;
-    border-radius: 2px;
+    border-radius: var(--r-xs);
     background: rgba(34, 197, 94, 0.08);
     transition: all 0.2s ease;
     cursor: pointer;
@@ -362,7 +362,7 @@ body {
 .heatmap-legend-item {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--sp-1);
     font-size: 10px;
     color: var(--text-secondary);
 }
@@ -370,14 +370,14 @@ body {
 .heatmap-legend-swatch {
     width: 10px;
     height: 10px;
-    border-radius: 2px;
+    border-radius: var(--r-xs);
     flex-shrink: 0;
 }
 
 /* Mobile adjustments for heatmap */
 @media (max-width: 380px) {
     .volume-heatmap {
-        padding: 12px;
+        padding: var(--sp-3);
         max-width: 280px;
     }
     
@@ -404,7 +404,7 @@ body {
 .home-secondary-links {
     display: flex;
     justify-content: center;
-    gap: 8px;
+    gap: var(--sp-2);
     flex-wrap: wrap;
     margin-bottom: 12px;
 }
@@ -414,9 +414,9 @@ body {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--neutral-300);
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     min-height: 44px;
-    padding: 8px 12px;
+    padding: var(--sp-2) var(--sp-3);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -439,7 +439,7 @@ body {
 }
 
 .home-link-btn:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
 .home-heatmap {
@@ -451,7 +451,7 @@ body {
     width: 100%;
     height: 56px;
     border: none;
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     font-size: var(--fs-md);
     font-weight: var(--fw-semibold);
     display: flex;
@@ -495,7 +495,7 @@ body {
 }
 
 .glass-btn-primary:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
     box-shadow: var(--shadow-1);
 }
 
@@ -506,7 +506,7 @@ body {
 }
 
 .glass-btn-secondary:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
     box-shadow: var(--shadow-1);
 }
 
@@ -536,8 +536,8 @@ body {
     background: rgba(26, 26, 26, 0.95);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    padding: 12px 16px;
-    border-radius: 20px;
+    padding: var(--sp-3) var(--sp-4);
+    border-radius: var(--r-xl);
     border: 1px solid rgba(34, 197, 94, 0.2);
     box-shadow: var(--shadow-2);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -566,13 +566,13 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border-radius: 12px;
+    border-radius: var(--r-md);
     transition: all 0.3s ease;
     box-shadow: var(--shadow-1);
 }
 
 .btn-back:active {
-    transform: scale(0.95);
+    transform: scale(0.97);
     box-shadow: 0 1px 4px var(--border-accent);
 }
 
@@ -592,7 +592,7 @@ body {
     bottom: calc(92px + env(safe-area-inset-bottom) + 84px);
     width: 48px;
     height: 48px;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
     border: 1px solid rgba(255, 255, 255, 0.18);
     color: white;
@@ -633,7 +633,7 @@ body {
 }
 
 .history-overview {
-    margin-bottom: 18px;
+    margin-bottom: var(--sp-5);
 }
 
 .history-overview-grid {
@@ -646,7 +646,7 @@ body {
 .history-overview-card {
     background: var(--surface-1);
     border: 1px solid var(--border-subtle);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     padding: 14px;
     box-shadow: var(--shadow-1);
 }
@@ -671,7 +671,7 @@ body {
 .history-insight-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--sp-2);
     margin-top: 2px;
 }
 
@@ -679,8 +679,8 @@ body {
     background: rgba(39, 39, 42, 0.9);
     color: var(--neutral-300);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 999px;
-    padding: 8px 12px;
+    border-radius: var(--r-pill);
+    padding: var(--sp-2) var(--sp-3);
     font-size: 12px;
     display: inline-flex;
     align-items: center;
@@ -689,10 +689,10 @@ body {
 
 .history-controls {
     background: #232323;
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     border: 1px solid var(--border-subtle);
-    padding: 12px;
-    margin-bottom: 18px;
+    padding: var(--sp-3);
+    margin-bottom: var(--sp-5);
 }
 
 .history-controls-grid {
@@ -727,30 +727,31 @@ body {
 .history-feed-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--sp-3);
 }
 
 .history-card {
     background: var(--surface-1);
-    border-radius: 14px;
-    padding: 16px;
+    border-radius: var(--r-lg);
+    padding: var(--sp-4);
     box-shadow: var(--shadow-2);
     border: 1px solid var(--border-subtle);
 }
 
 .history-card-main {
     cursor: pointer;
+    transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 
 .history-card-main:active {
-    transform: scale(0.99);
+    transform: scale(0.97);
 }
 
 .history-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--sp-2);
     margin-bottom: 10px;
 }
 
@@ -766,7 +767,7 @@ body {
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--sp-1);
 }
 
 .history-time {
@@ -778,14 +779,14 @@ body {
 .history-metric-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--sp-2);
     margin-bottom: 10px;
 }
 
 .history-metric-pill {
     font-size: 12px;
     padding: 6px 10px;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     background: rgba(255,255,255,0.05);
     color: var(--neutral-300);
     border: 1px solid var(--border-subtle);
@@ -812,7 +813,7 @@ body {
 
 .history-card-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-2);
     margin-top: 14px;
     padding-top: 12px;
     border-top: 1px solid var(--border-subtle);
@@ -846,13 +847,13 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
+    border-radius: var(--r-md);
 }
 
 /* Exercise Card */
 .exercise-card {
     background: var(--surface-1);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     margin-bottom: 12px;
     box-shadow: var(--shadow-2);
     overflow: visible;
@@ -873,11 +874,12 @@ body {
     align-items: center;
     cursor: pointer;
     user-select: none;
-    transition: background 0.2s;
+    transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 
 .exercise-header:active {
     background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent-active) 100%);
+    transform: scale(0.97);
 }
 
 .exercise-header-left {
@@ -915,7 +917,7 @@ body {
     background: rgba(0,0,0,0.18);
     border: 1px solid rgba(255,255,255,0.18);
     padding: 2px 6px;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
 }
 
 /* Superset grouping: colored left accent + A1/A2 badge, tightened spacing to read as a bracket */
@@ -938,7 +940,7 @@ body {
     color: #fff;
     background: var(--ss-color, var(--amber-500));
     padding: 2px 6px 2px 4px;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
 }
 
 .superset-badge i {
@@ -949,7 +951,7 @@ body {
 .exercise-header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
     position: relative;
     flex-shrink: 0;
 }
@@ -979,7 +981,7 @@ body {
     color: white;
     width: var(--touch-target);
     height: var(--touch-target);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-size: 18px;
     display: flex;
     align-items: center;
@@ -1005,7 +1007,7 @@ body {
     color: white;
     width: 36px;
     height: 36px;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     font-size: 18px;
     display: flex;
     align-items: center;
@@ -1027,7 +1029,7 @@ body {
     min-width: 190px;
     background: rgba(20, 20, 20, 0.98);
     border: 1px solid rgba(34, 197, 94, 0.22);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     box-shadow: var(--shadow-3);
     padding: 6px;
     display: none;
@@ -1049,7 +1051,7 @@ body {
     gap: 10px;
     width: 100%;
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     font-size: 14px;
     text-align: left;
 }
@@ -1067,7 +1069,7 @@ body {
 }
 
 .exercise-body {
-    padding: 8px;
+    padding: var(--sp-2);
     max-height: 5000px;
     overflow: hidden;
     transition: max-height 0.3s ease, padding 0.3s ease;
@@ -1082,13 +1084,13 @@ body {
 .sets-overview-container {
     margin-bottom: 12px;
     background: var(--surface-1);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     padding: 8px 0;
 }
 
 .sets-overview {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-2);
     overflow-x: auto;
     padding: 0 12px;
     scroll-snap-type: x mandatory;
@@ -1105,7 +1107,7 @@ body {
     width: 90px;
     background: var(--bg-card);
     border: 2px solid transparent;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     padding: 10px 8px;
     text-align: center;
     cursor: pointer;
@@ -1119,6 +1121,10 @@ body {
     border-color: var(--primary-color);
     transform: scale(1.05);
     box-shadow: var(--shadow-accent);
+}
+
+.set-card:active {
+    transform: scale(0.97);
 }
 
 .set-card-number {
@@ -1161,8 +1167,8 @@ body {
 /* Current Set Details */
 .current-set-details {
     background: var(--border-default);
-    border-radius: 8px;
-    padding: 12px;
+    border-radius: var(--r-sm);
+    padding: var(--sp-3);
     margin-bottom: 8px;
     max-height: 5000px;
     overflow: hidden;
@@ -1196,7 +1202,7 @@ body {
 /* Sets */
 .set-item {
     background: var(--bg-card);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     padding: 10px;
     margin-bottom: 8px;
 }
@@ -1211,7 +1217,7 @@ body {
 .set-header-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
     flex: 1;
     cursor: pointer;
     user-select: none;
@@ -1228,7 +1234,7 @@ body {
     color: white;
     width: 36px;
     height: 36px;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     font-size: 16px;
     cursor: pointer;
 }
@@ -1237,10 +1243,10 @@ body {
 .set-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
     background: rgba(42, 42, 42, 0.78);
     padding: 6px 8px;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     margin-bottom: 8px;
     font-size: 13px;
     border: 1px solid rgba(34, 197, 94, 0.15);
@@ -1280,7 +1286,7 @@ body {
     height: 40px;
     text-align: center;
     border: 2px solid var(--border-accent);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     padding: 4px;
     font-size: 15px;
     font-weight: var(--fw-bold);
@@ -1320,7 +1326,7 @@ body {
     color: var(--text-secondary);
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     font-size: 20px;
     cursor: pointer;
     flex-shrink: 0;
@@ -1367,7 +1373,7 @@ body {
     color: var(--amber-500);
     width: 40px;
     height: 40px;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-size: 18px;
     cursor: pointer;
     flex-shrink: 0;
@@ -1393,7 +1399,7 @@ body {
     color: white;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: var(--r-pill);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1478,8 +1484,8 @@ body {
 
 .value-row {
     background: var(--border-default);
-    padding: 8px;
-    border-radius: 6px;
+    padding: var(--sp-2);
+    border-radius: var(--r-sm);
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
@@ -1494,7 +1500,7 @@ body {
 
 .value-group {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-2);
     align-items: center;
 }
 
@@ -1502,7 +1508,7 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--sp-1);
 }
 
 .value-type {
@@ -1514,21 +1520,21 @@ body {
 .value-controls {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--sp-1);
 }
 
 /* Workout Detail Modal */
 .workout-detail-meta {
     background: var(--bg-card);
-    padding: 12px;
-    border-radius: 8px;
+    padding: var(--sp-3);
+    border-radius: var(--r-sm);
     margin-bottom: 16px;
 }
 
 .detail-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
     padding: 6px 0;
     font-size: 14px;
 }
@@ -1542,13 +1548,13 @@ body {
 .workout-detail-exercises {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--sp-3);
 }
 
 .detail-exercise-card {
     background: var(--bg-card);
-    border-radius: 8px;
-    padding: 12px;
+    border-radius: var(--r-sm);
+    padding: var(--sp-3);
 }
 
 .detail-exercise-header {
@@ -1577,7 +1583,7 @@ body {
     align-items: center;
     padding: 6px 8px;
     background: var(--surface-1);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     font-size: 13px;
 }
 
@@ -1589,7 +1595,7 @@ body {
 
 .detail-set-values {
     display: flex;
-    gap: 12px;
+    gap: var(--sp-3);
     flex: 1;
     justify-content: space-around;
 }
@@ -1608,7 +1614,7 @@ body {
     flex: 1;
     text-align: center;
     border: 2px solid var(--border-accent);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     padding: 6px;
     font-size: var(--fs-base);
     font-weight: var(--fw-semibold);
@@ -1632,7 +1638,7 @@ body {
     background: var(--border-default);
     border: 2px dashed var(--accent);
     color: var(--accent);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-weight: 600;
     cursor: pointer;
     margin-top: 8px;
@@ -1644,6 +1650,10 @@ body {
     border-color: var(--accent-hover);
 }
 
+.add-set-btn:active {
+    transform: scale(0.97);
+}
+
 /* Swap Exercise Button */
 .swap-exercise-btn {
     width: 20%;
@@ -1651,7 +1661,7 @@ body {
     background: var(--border-default);
     border: 1px solid var(--accent);
     color: var(--accent);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-weight: 600;
     cursor: pointer;
     margin-top: 8px;
@@ -1671,7 +1681,7 @@ body {
     border: 2px dashed var(--accent);       /* match add-set-btn style */
     color: var(--accent);
     margin-bottom: 10px;
-    border-radius: 8px;               /* was 16px, now matches */
+    border-radius: var(--r-sm);               /* was 16px, now matches */
     box-shadow: var(--shadow-1);
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1708,7 +1718,7 @@ body {
     padding: 10px;
     background: rgba(20, 20, 20, 0.94);
     border: 1px solid rgba(34, 197, 94, 0.18);
-    border-radius: 18px;
+    border-radius: var(--r-xl);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: var(--shadow-3);
@@ -1737,7 +1747,7 @@ body {
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(34, 197, 94, 0.2);
-    border-radius: 24px;
+    border-radius: var(--r-xl);
     display: flex;
     padding: 6px 16px;
     padding-bottom: 6px;
@@ -1759,7 +1769,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px 12px;
+    padding: var(--sp-2) var(--sp-3);
     border: none;
     background: none;
     color: var(--text-secondary);
@@ -1776,7 +1786,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: var(--r-md);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     margin-bottom: 4px;
@@ -1805,7 +1815,7 @@ body {
 /* Hover/Press States */
 .nav-item:not(.active):active .nav-icon-wrapper {
     background: rgba(34, 197, 94, 0.1);
-    transform: scale(0.95);
+    transform: scale(0.97);
 }
 
 .nav-item:not(.active):hover {
@@ -1832,7 +1842,7 @@ body {
     width: 24px;
     height: 3px;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-    border-radius: 0 0 3px 3px;
+    border-radius: 0 0 var(--r-xs) var(--r-xs);
     animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1849,7 +1859,7 @@ body {
 
 /* Modal Optimizations */
 .modal-content {
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     background: var(--surface-2);
     color: white;
     border: 1px solid var(--border-accent);
@@ -1857,7 +1867,7 @@ body {
 
 .modal-header {
     border-bottom: 1px solid rgba(34, 197, 94, 0.2);
-    padding: 16px;
+    padding: var(--sp-4);
 }
 
 .modal-header .btn-close {
@@ -1870,18 +1880,18 @@ body {
 }
 
 .modal-body {
-    padding: 20px 16px;
+    padding: var(--sp-5) var(--sp-4);
 }
 
 .modal-footer {
     border-top: 1px solid rgba(34, 197, 94, 0.2);
-    padding: 16px;
+    padding: var(--sp-4);
 }
 
 #exerciseNameInput {
     font-size: 16px;
-    padding: 12px;
-    border-radius: 8px;
+    padding: var(--sp-3);
+    border-radius: var(--r-sm);
     background: var(--border-default);
     color: white;
     border: 1px solid var(--border-accent);
@@ -1910,13 +1920,13 @@ body {
 .exercise-history-list {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: var(--sp-4);
 }
 
 .history-session {
     background: var(--border-default);
-    border-radius: 8px;
-    padding: 12px;
+    border-radius: var(--r-sm);
+    padding: var(--sp-3);
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
@@ -1952,7 +1962,7 @@ body {
     align-items: center;
     padding: 6px 8px;
     background: var(--surface-2);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
@@ -1979,7 +1989,7 @@ body {
     min-height: 52px;
     font-size: 17px;
     font-weight: 600;
-    border-radius: 12px;
+    border-radius: var(--r-md);
 }
 
 .btn-primary {
@@ -2052,7 +2062,7 @@ body {
     }
     
     .exercise-body {
-        padding: 16px;
+        padding: var(--sp-4);
     }
 }
 
@@ -2090,14 +2100,14 @@ input[type="number"] {
 .detail-stats-header {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    gap: var(--sp-3);
     margin-bottom: 20px;
 }
 
 .detail-stat-card {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
-    border-radius: 12px;
-    padding: 16px 12px;
+    border-radius: var(--r-md);
+    padding: var(--sp-4) var(--sp-3);
     text-align: center;
     color: white;
 }
@@ -2127,8 +2137,8 @@ input[type="number"] {
 /* Performance Section */
 .detail-performance {
     background: var(--border-default);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: var(--r-md);
+    padding: var(--sp-4);
     margin-bottom: 20px;
     box-shadow: var(--shadow-1);
     border: 1px solid var(--border-subtle);
@@ -2149,12 +2159,12 @@ input[type="number"] {
 
 .performance-badge {
     padding: 6px 12px;
-    border-radius: 20px;
+    border-radius: var(--r-xl);
     font-size: 13px;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--sp-1);
 }
 
 .badge-excellent {
@@ -2178,7 +2188,7 @@ input[type="number"] {
 .performance-bar {
     height: 8px;
     background: var(--border-default);
-    border-radius: 4px;
+    border-radius: var(--r-xs);
     overflow: hidden;
     margin-bottom: 8px;
 }
@@ -2186,7 +2196,7 @@ input[type="number"] {
 .performance-bar-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 100%);
-    border-radius: 4px;
+    border-radius: var(--r-xs);
     transition: width 0.8s ease;
 }
 
@@ -2199,8 +2209,8 @@ input[type="number"] {
 /* Workout Highlights */
 .detail-highlights {
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: var(--r-md);
+    padding: var(--sp-4);
     margin-bottom: 20px;
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
@@ -2251,7 +2261,7 @@ input[type="number"] {
 /* New Exercise Card Design */
 .detail-exercise-card-new {
     background: var(--surface-1);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     margin-bottom: 12px;
     box-shadow: var(--shadow-1);
     overflow: hidden;
@@ -2282,7 +2292,7 @@ input[type="number"] {
 .exercise-header-left-new {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--sp-3);
     flex: 1;
 }
 
@@ -2313,14 +2323,14 @@ input[type="number"] {
 .exercise-header-right-new {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
 }
 
 .exercise-sets-badge {
     background: var(--accent);
     color: var(--text-on-accent);
     padding: 4px 10px;
-    border-radius: 12px;
+    border-radius: var(--r-md);
     font-size: 12px;
     font-weight: 600;
 }
@@ -2333,7 +2343,7 @@ input[type="number"] {
 
 /* Exercise Body */
 .detail-exercise-body-new {
-    padding: 16px;
+    padding: var(--sp-4);
     border-top: 1px solid var(--border-default);
 }
 
@@ -2345,10 +2355,10 @@ input[type="number"] {
 .sets-table-header {
     display: grid;
     grid-template-columns: 40px 1fr 1fr 60px;
-    gap: 8px;
+    gap: var(--sp-2);
     padding: 10px 12px;
     background: var(--surface-1);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     margin-bottom: 8px;
     font-size: 12px;
     font-weight: 600;
@@ -2360,10 +2370,10 @@ input[type="number"] {
 .sets-table-row {
     display: grid;
     grid-template-columns: 40px 1fr 1fr 60px;
-    gap: 8px;
-    padding: 12px;
+    gap: var(--sp-2);
+    padding: var(--sp-3);
     background: var(--surface-2);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     margin-bottom: 4px;
     font-size: 14px;
     align-items: center;
@@ -2451,7 +2461,7 @@ input[type="number"] {
 .set-progress-bar {
     height: 4px;
     background: var(--border-default);
-    border-radius: 2px;
+    border-radius: var(--r-xs);
     overflow: hidden;
     margin: -8px 12px 8px 12px;
 }
@@ -2459,24 +2469,24 @@ input[type="number"] {
 .set-progress-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 100%);
-    border-radius: 2px;
+    border-radius: var(--r-xs);
     transition: width 0.5s ease;
 }
 
 /* Modal Adjustments */
 .modal-body {
-    padding: 20px;
+    padding: var(--sp-5);
 }
 
 .modal-footer {
-    padding: 16px 20px;
-    gap: 8px;
+    padding: var(--sp-4) var(--sp-5);
+    gap: var(--sp-2);
 }
 
 /* Responsive adjustments for detail view */
 @media (max-width: 380px) {
     .detail-stats-header {
-        gap: 8px;
+        gap: var(--sp-2);
     }
     
     .detail-stat-card {
@@ -2503,8 +2513,8 @@ input[type="number"] {
 
 .settings-section {
     background: var(--surface-1);
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: var(--r-md);
+    padding: var(--sp-5);
     margin-bottom: 20px;
     box-shadow: var(--shadow-1);
     border: 1px solid var(--border-subtle);
@@ -2525,7 +2535,7 @@ input[type="number"] {
     color: white;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
 }
 
 .exercise-count {
@@ -2540,7 +2550,7 @@ input[type="number"] {
 }
 
 .exercise-search-container input {
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     border: 1px solid var(--border-accent);
     padding: 10px 16px;
     background: var(--surface-2);
@@ -2566,7 +2576,7 @@ input[type="number"] {
     align-items: center;
     padding: 14px;
     background: var(--surface-1);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     border: 1px solid var(--border-subtle);
     box-shadow: var(--shadow-1);
     transition: all 0.2s ease;
@@ -2587,7 +2597,7 @@ input[type="number"] {
     margin-bottom: 4px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
     flex-wrap: wrap;
 }
 
@@ -2596,7 +2606,7 @@ input[type="number"] {
     padding: 2px 8px;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
     color: white;
-    border-radius: 4px;
+    border-radius: var(--r-xs);
     font-weight: 600;
     text-transform: uppercase;
 }
@@ -2608,13 +2618,13 @@ input[type="number"] {
 
 .exercise-library-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-2);
 }
 
 .btn-icon-action {
     background: var(--border-default);
     border: 1px solid var(--border-accent);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     width: 36px;
     height: 36px;
     display: flex;
@@ -2653,7 +2663,7 @@ input[type="number"] {
     overflow-y: auto;
     background: var(--surface-2);
     border: 1px solid var(--border-accent);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     margin-top: 4px;
     box-shadow: var(--shadow-3);
     z-index: 1050;
@@ -2661,7 +2671,7 @@ input[type="number"] {
 }
 
 .autocomplete-item {
-    padding: 12px 16px;
+    padding: var(--sp-3) var(--sp-4);
     cursor: pointer;
     border-bottom: 1px solid rgba(34, 197, 94, 0.1);
     transition: background 0.15s ease;
@@ -2680,7 +2690,7 @@ input[type="number"] {
 .autocomplete-item-main {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
     margin-bottom: 4px;
 }
 
@@ -2705,7 +2715,7 @@ input[type="number"] {
     padding: 2px 8px;
     background: rgba(34, 197, 94, 0.2);
     color: var(--accent);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     font-size: 11px;
     font-weight: 500;
     border: 1px solid var(--accent);
@@ -2717,9 +2727,9 @@ input[type="number"] {
 }
 
 #addToLibraryContainer {
-    padding: 12px;
+    padding: var(--sp-3);
     background: var(--border-default);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     border: 1px dashed var(--border-accent);
 }
 
@@ -2731,9 +2741,9 @@ input[type="number"] {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 12px;
+    padding: var(--sp-2) var(--sp-3);
     background: rgba(34, 197, 94, 0.1);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     border-left: 3px solid var(--accent);
     color: var(--accent);
 }
@@ -2749,12 +2759,12 @@ input[type="number"] {
 
 .autocomplete-dropdown::-webkit-scrollbar-track {
     background: var(--surface-2);
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
 }
 
 .autocomplete-dropdown::-webkit-scrollbar-thumb {
     background: var(--accent);
-    border-radius: 3px;
+    border-radius: var(--r-xs);
 }
 
 .autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
@@ -2807,7 +2817,7 @@ input[type="number"] {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px;
+    padding: var(--sp-4);
     border-bottom: 1px solid rgba(255,255,255,0.1);
     cursor: pointer;
     transition: background 0.2s;
@@ -2843,7 +2853,7 @@ input[type="number"] {
 
 .data-browser-item-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-2);
     align-items: center;
 }
 
@@ -2891,7 +2901,7 @@ input[type="number"] {
 .install-banner-content {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--sp-3);
 }
 
 .install-banner-icon {
@@ -2899,7 +2909,7 @@ input[type="number"] {
     width: 42px;
     height: 42px;
     background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-    border-radius: 10px;
+    border-radius: var(--r-md);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2927,7 +2937,7 @@ input[type="number"] {
 
 .install-banner-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-2);
     flex-shrink: 0;
 }
 
@@ -2937,7 +2947,7 @@ input[type="number"] {
     color: var(--text-secondary);
     font-size: 0.78rem;
     padding: 6px 11px;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     cursor: pointer;
     min-height: var(--touch-target);
 }
@@ -2949,7 +2959,7 @@ input[type="number"] {
     font-size: 0.78rem;
     font-weight: 600;
     padding: 6px 12px;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     cursor: pointer;
     min-height: var(--touch-target);
 }
@@ -2984,7 +2994,7 @@ input[type="number"] {
     height: 22px;
     background: rgba(34, 197, 94, 0.15);
     border: 1px solid rgba(34, 197, 94, 0.4);
-    border-radius: 50%;
+    border-radius: var(--r-pill);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3000,8 +3010,8 @@ input[type="number"] {
 /* Record Editor */
 .field-editor-group {
     background: var(--surface-2);
-    border-radius: 8px;
-    padding: 16px;
+    border-radius: var(--r-sm);
+    padding: var(--sp-4);
     margin-bottom: 16px;
     border: 1px solid rgba(255,255,255,0.1);
 }
@@ -3012,12 +3022,12 @@ input[type="number"] {
     margin-bottom: 12px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
 }
 
 .field-row {
     display: flex;
-    gap: 12px;
+    gap: var(--sp-3);
     margin-bottom: 12px;
 }
 
@@ -3039,7 +3049,7 @@ input[type="number"] {
 .field-input input {
     width: 100%;
     padding: 10px 12px;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     border: 1px solid rgba(255,255,255,0.2);
     background: var(--border-default);
     color: white;
@@ -3068,8 +3078,8 @@ input[type="number"] {
 /* Set card in editor */
 .set-edit-card {
     background: var(--surface-2);
-    border-radius: 8px;
-    padding: 16px;
+    border-radius: var(--r-sm);
+    padding: var(--sp-4);
     margin-bottom: 12px;
     border: 1px solid rgba(255,255,255,0.1);
 }
@@ -3095,7 +3105,7 @@ input[type="number"] {
 .completed-toggle {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--sp-2);
     font-size: 13px;
     color: var(--text-secondary);
 }
@@ -3123,7 +3133,7 @@ input[type="number"] {
 /* Date Range Selector */
 .date-range-selector {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-2);
     flex-wrap: wrap;
 }
 
@@ -3134,7 +3144,7 @@ input[type="number"] {
     border: 1px solid rgba(255,255,255,0.2);
     background: var(--border-default);
     color: var(--text-secondary);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
@@ -3154,7 +3164,7 @@ input[type="number"] {
 /* Custom Date Range */
 .custom-date-row {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-2);
     align-items: flex-end;
 }
 
@@ -3173,8 +3183,8 @@ input[type="number"] {
     background: var(--border-default);
     border: 1px solid rgba(255,255,255,0.2);
     color: white;
-    border-radius: 8px;
-    padding: 8px;
+    border-radius: var(--r-sm);
+    padding: var(--sp-2);
     font-size: 14px;
     width: 100%;
 }
@@ -3193,7 +3203,7 @@ input[type="number"] {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
 }
 
 .custom-apply-btn i {
@@ -3210,7 +3220,7 @@ input[type="number"] {
 .category-donut {
     width: 200px;
     height: 200px;
-    border-radius: 50%;
+    border-radius: var(--r-pill);
     position: relative;
     background: var(--border-default);
 }
@@ -3223,7 +3233,7 @@ input[type="number"] {
     transform: translate(-50%, -50%);
     width: 120px;
     height: 120px;
-    border-radius: 50%;
+    border-radius: var(--r-pill);
     background: var(--surface-2);
 }
 
@@ -3254,20 +3264,20 @@ input[type="number"] {
 .category-legend {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--sp-3);
     padding: 16px 0;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--sp-3);
 }
 
 .legend-swatch {
     width: 16px;
     height: 16px;
-    border-radius: 4px;
+    border-radius: var(--r-xs);
     flex-shrink: 0;
 }
 
@@ -3285,10 +3295,10 @@ input[type="number"] {
 /* Summary Stats */
 .breakdown-summary {
     display: flex;
-    gap: 16px;
-    padding: 16px;
+    gap: var(--sp-4);
+    padding: var(--sp-4);
     background: var(--border-default);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     margin-top: 16px;
 }
 
@@ -3322,10 +3332,10 @@ input[type="number"] {
 .category-card {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--sp-3);
     padding: 14px;
     background: var(--surface-2);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
@@ -3337,7 +3347,7 @@ input[type="number"] {
 .category-swatch {
     width: 24px;
     height: 24px;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     flex-shrink: 0;
 }
 
@@ -3349,20 +3359,20 @@ input[type="number"] {
 
 .category-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--sp-2);
 }
 
 /* Color Swatch Grid */
 .color-swatch-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
+    gap: var(--sp-2);
 }
 
 .color-swatch {
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     border: 2px solid transparent;
     cursor: pointer;
     transition: all 0.2s ease;
