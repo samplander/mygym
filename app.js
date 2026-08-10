@@ -27,6 +27,21 @@ if ('serviceWorker' in navigator) {
 // PWA Install Prompt
 let deferredInstallPrompt = null;
 
+// Lightweight analytics helper. Records a named event in GoatCounter if it has
+// loaded; silently no-ops otherwise (offline, blocked, or still loading) so it
+// can never break the app.
+function track(name, _tries) {
+    _tries = _tries || 0;
+    try {
+        if (window.goatcounter && typeof window.goatcounter.count === 'function') {
+            window.goatcounter.count({ path: name, title: name, event: true });
+        } else if (_tries < 20) {
+            // count.js loads async; retry briefly so early events aren't lost.
+            setTimeout(() => track(name, _tries + 1), 300);
+        }
+    } catch (e) { /* analytics must never throw */ }
+}
+
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredInstallPrompt = e;
@@ -35,6 +50,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
     hideInstallBanner();
+    track('pwa-install');
 });
 
 // Initialize app
@@ -43,6 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeApp() {
+    // Signal that the app was opened as an installed PWA (a returning-user cue,
+    // since GoatCounter's pageview only fires for browser-tab visits reliably).
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        track('app-open-installed');
+    }
+
     // Check if there's an active workout
     loadCurrentWorkout();
 
@@ -235,6 +257,7 @@ function startWorkout() {
     saveCurrentWorkout();
     renderHomeStatusCard();
     showWorkoutScreen();
+    track('workout-start');
 }
 
 // AI Coach Workout Generation
@@ -523,6 +546,7 @@ function startCoachGeneratedWorkout() {
     
     // Navigate to workout screen
     showWorkoutScreen();
+    track('coach-workout-start');
 }
 
 function completeWorkout() {
@@ -549,6 +573,7 @@ function completeWorkout() {
         // Save to history
         saveToHistory();
         incrementTotalWorkoutsCompleted();
+        track('workout-complete');
 
         // Clear current workout
         currentWorkout = null;
@@ -747,6 +772,7 @@ function toggleSetCompletion(exerciseId, setIndex) {
     if (!exercise || !exercise.sets[setIndex]) return;
     
     exercise.sets[setIndex].completed = !exercise.sets[setIndex].completed;
+    if (exercise.sets[setIndex].completed) track('set-complete');
     saveCurrentWorkout();
     renderExercises();
 }
