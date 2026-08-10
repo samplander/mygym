@@ -1,6 +1,6 @@
 {
-  "name": "RepForge - Your Personal Fitness Companion",
-  "short_name": "RepForge",
+  "name": "RepEtition",
+  "short_name": "RepEtition",
   "description": "Train smarter, achieve your goals",
   "start_url": "/mygym",
   "display": "standalone",
